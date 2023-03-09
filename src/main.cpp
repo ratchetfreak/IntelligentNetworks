@@ -4,19 +4,36 @@
 
 int main()
 {
-	Connection *connection = new Connection;
-	connection->weight = .5;
-	connection->startNode = 0;
-	connection->endNode = 1;
+	// Connection *connection = new Connection;
+	// connection->weight = .5;
+	// connection->startNode = 0;
+	// connection->endNode = 1;
+	//
+	// NeuralNetwork network(2, 1, connection, 1);
+	//
+	// network.setInputNode(0, 1);
+	//
+	// network.update();
+	//
+	// std::cout << network.getNode(1).value << '\n';
+	//
+	// network.destroy();
+	// delete connection;
+	
+	NetworkStructure netstruc(16, 2, 3, 2);
 
-	NeuralNetwork network(2, 1, connection, 1);
+	srand(time(NULL));
 
-	network.setInputNode(0, 1);
+	netstruc.mutate();
+	netstruc.mutate();
+	netstruc.mutate();
+	netstruc.mutate();
+	netstruc.mutate();
+	netstruc.mutate();
+	netstruc.mutate();
+	netstruc.mutate();
+	netstruc.mutate();
+	netstruc.mutate();
 
-	network.update();
-
-	std::cout << network.getNode(1).value << '\n';
-
-	network.destroy();
-	delete connection;
+	std::cout << netstruc << '\n';
 }

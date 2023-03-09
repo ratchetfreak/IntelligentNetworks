@@ -2,6 +2,8 @@
 
 #include <cstdio>
 #include <math.h>
+#include <ostream>
+#include <sstream>
 
 class Node
 {
@@ -22,6 +24,45 @@ class Connection
 		bool  valid	 = true;
 		int	  id	 = -1;
 		bool  exists = true;
+};
+
+class NetworkStructure
+{
+	public:
+		Connection *connection;
+		int			totalConnections;
+		int			totalInputNodes;
+		int			totalHiddenNodes;
+		int			totalOutputNodes;
+		int			totalNodes;
+
+		NetworkStructure(int totalConnections, int totalInputNodes, int totalHiddenNodes, int totalOutputNodes);
+
+		void mutate();
+
+		friend std::ostream &operator<<(std::ostream &os, const NetworkStructure &networkStructure)
+		{
+			std::stringstream output;
+
+			output << "totalConnections - " << networkStructure.totalConnections << "\n";
+			output << "totalInputNodes  - " << networkStructure.totalInputNodes << "\n";
+			output << "totalHiddenNodes - " << networkStructure.totalHiddenNodes << "\n";
+			output << "totalOutputNodes - " << networkStructure.totalOutputNodes << "\n";
+			output << "totalNodes       - " << networkStructure.totalNodes << "\n";
+
+			output << "\nConnections\n";
+
+			for (int i = 0; i < networkStructure.totalConnections; i++)
+			{
+				output << "1: " << networkStructure.connection[i].startNode << " to "
+					   << networkStructure.connection[i].endNode
+					   << ", weight = " << networkStructure.connection[i].weight << "\n";
+			}
+
+			return os << output.str();
+		}
+
+		~NetworkStructure();
 };
 
 class NeuralNetwork
