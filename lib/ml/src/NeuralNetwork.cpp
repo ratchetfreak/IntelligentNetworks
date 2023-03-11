@@ -1,6 +1,7 @@
 #include "../inc/NeuralNetwork.hpp"
 
 #include <algorithm>
+#include <iostream>
 #include <vector>
 
 void travelNodeTree(Node *node, int totalNodes, Node **nodeCalculationOrder, int connectedNodes, int *nodeOrder, int id)
@@ -40,52 +41,52 @@ void travelNodeTree(Node *node, int totalNodes, Node **nodeCalculationOrder, int
 	return;
 }
 
-NeuralNetwork::NeuralNetwork(NetworkStructure networkStructure) : networkStructure(networkStructure)
+NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : networkStructure(networkStructure)
 {
-	node			 = new Node[networkStructure.totalNodes];
-	inputNode		 = new Node *[networkStructure.totalInputNodes];
+	node	  = new Node[this->networkStructure.totalNodes];
+	inputNode = new Node *[this->networkStructure.totalInputNodes];
 
 	// link input node pointers to actual nodes
-	for (int i = 0; i < networkStructure.totalInputNodes; i++)
+	for (int i = 0; i < this->networkStructure.totalInputNodes; i++)
 	{
 		inputNode[i] = &node[i];
 	}
 
 	// give every node an ID
-	for (int i = 0; i < networkStructure.totalNodes; i++)
+	for (int i = 0; i < this->networkStructure.totalNodes; i++)
 	{
 		node[i].id = i;
 	}
 
-	networkStructure.validate();
+	this->networkStructure.validate();
 
 	// set the amount of parents every node has according to connection
-	for (int y = 0; y < networkStructure.totalConnections; y++)
+	for (int y = 0; y < this->networkStructure.totalConnections; y++)
 	{
-		if (networkStructure.connection[y].valid)
+		if (this->networkStructure.connection[y].valid)
 		{
-			node[networkStructure.connection[y].endNode].parents++;
+			node[this->networkStructure.connection[y].endNode].parents++;
 		}
 	}
 
 	// allocate memory for every node to store a pointer to its parents
-	for (int i = 0; i < networkStructure.totalNodes; i++)
+	for (int i = 0; i < this->networkStructure.totalNodes; i++)
 	{
 		if (node[i].parents)
 		{
 			node[i].parent = new Node *[node[i].parents];
-			node[i].weight = new float[node[i].parents];
+			node[i].weight = new float *[node[i].parents];
 
 			int setParents = 0;
 
-			for (int x = 0; x < networkStructure.totalConnections; x++)
+			for (int x = 0; x < this->networkStructure.totalConnections; x++)
 			{
-				if (networkStructure.connection[x].valid)
+				if (this->networkStructure.connection[x].valid)
 				{
-					if (networkStructure.connection[x].endNode == i)
+					if (this->networkStructure.connection[x].endNode == i)
 					{
-						node[i].parent[setParents] = &node[networkStructure.connection[x].startNode];
-						node[i].weight[setParents] = networkStructure.connection[x].weight;
+						node[i].parent[setParents] = &node[this->networkStructure.connection[x].startNode];
+						node[i].weight[setParents] = (float *)(&this->networkStructure.connection[x].weight);
 
 						setParents++;
 					}
@@ -94,7 +95,7 @@ NeuralNetwork::NeuralNetwork(NetworkStructure networkStructure) : networkStructu
 		}
 	}
 
-	for (int i = 0; i < networkStructure.totalNodes; i++)
+	for (int i = 0; i < this->networkStructure.totalNodes; i++)
 	{
 		if (node[i].parents)
 		{
@@ -106,13 +107,12 @@ NeuralNetwork::NeuralNetwork(NetworkStructure networkStructure) : networkStructu
 
 	int nodeOrder = 0;
 
-	for (int i = 0; i < networkStructure.totalInputNodes; i++)
+	for (int i = 0; i < this->networkStructure.totalInputNodes; i++)
 	{
-		travelNodeTree(node, networkStructure.totalNodes, nodeCalculationOrder, connectedNodes, &nodeOrder, i);
+		travelNodeTree(node, this->networkStructure.totalNodes, nodeCalculationOrder, connectedNodes, &nodeOrder, i);
 	}
 
 	connectedNodes = nodeOrder;
-
 
 	return;
 }
@@ -129,14 +129,45 @@ void NeuralNetwork::update()
 {
 	for (int i = 0; i < connectedNodes; i++)
 	{
+		nodeCalculationOrder[i]->value = 0;
+
 		for (int x = 0; x < nodeCalculationOrder[i]->parents; x++)
 		{
 			nodeCalculationOrder[i]->value +=
-				nodeCalculationOrder[i]->parent[x]->value * nodeCalculationOrder[i]->weight[x];
+				nodeCalculationOrder[i]->parent[x]->value * (*nodeCalculationOrder[i]->weight[x]);
 		}
 
 		nodeCalculationOrder[i]->value = tanh(nodeCalculationOrder[i]->value);
 	}
+
+	return;
+}
+
+void NeuralNetwork::backpropagation(std::vector<float> targetValues)
+{
+	float *nodeError = new float[networkStructure.totalNodes];
+
+	for (int i = (networkStructure.totalNodes - networkStructure.totalOutputNodes); i < networkStructure.totalNodes;
+		 i++)
+	{
+		float diff =
+			targetValues[i - (networkStructure.totalNodes - networkStructure.totalOutputNodes)] - node[i].value;
+
+		nodeError[i] = diff;
+	}
+
+	for(int i = 0; i < connectedNodes; i++)
+	{
+		if(nodeCalculationOrder[i]->id >= (networkStructure.totalNodes - networkStructure.totalOutputNodes))
+		{
+			for(int x = 0; x < nodeCalculationOrder[i]->parents; x++)
+			{
+				*nodeCalculationOrder[i]->weight[x] = *nodeCalculationOrder[i]->weight[x] + (learningRate * nodeCalculationOrder[i]->parent[x]->value * nodeError[nodeCalculationOrder[i]->id]);
+			}
+		}
+	}
+
+	delete[] nodeError;
 
 	return;
 }

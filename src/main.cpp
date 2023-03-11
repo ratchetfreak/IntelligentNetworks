@@ -16,5 +16,13 @@ int main()
 
 	std::cout << network.getNode(1).value << '\n';
 
+	for (int i = 0; i < 20; i++)
+	{
+		network.backpropagation({1});
+		network.update();
+
+		std::cout << network.getNode(1).value << '\n';
+	}
+
 	network.destroy();
 }
