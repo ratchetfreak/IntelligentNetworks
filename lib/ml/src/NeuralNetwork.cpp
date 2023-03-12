@@ -4,39 +4,27 @@
 #include <iostream>
 #include <vector>
 
-void travelNodeTree(Node *node, int totalNodes, Node **nodeCalculationOrder, int connectedNodes, int *nodeOrder, int id)
+#define e 2.71828
+
+void travelNodeTree(Node *node, bool *visitedNode, Node **nodeCalculationOrder, int *connectedNodes)
 {
-	for (int i = 0; i < totalNodes; i++)
+	if (!node->parents)
 	{
-		if (node[i].parents)
+		visitedNode[node->id] = true;
+		return;
+	}
+
+	for (int i = 0; i < node->parents; i++)
+	{
+		if (!visitedNode[node->parent[i]->id])
 		{
-			for (int x = 0; x < node[i].parents; x++)
-			{
-				if (x == i)
-				{
-					continue;
-				}
-
-				if (node[i].parent[x]->id == id)
-				{
-					for (int y = 0; y < *nodeOrder; y++)
-					{
-						if (nodeCalculationOrder[y]->id == i)
-						{
-							goto exitLoop;
-						}
-					}
-
-					nodeCalculationOrder[*nodeOrder] = &node[i];
-					*nodeOrder += 1;
-
-					travelNodeTree(node, totalNodes, nodeCalculationOrder, connectedNodes, nodeOrder, i);
-				}
-
-			exitLoop:;
-			}
+			travelNodeTree(node->parent[i], visitedNode, nodeCalculationOrder, connectedNodes);
 		}
 	}
+
+	nodeCalculationOrder[*connectedNodes] = node;
+	(*connectedNodes)++;
+	visitedNode[node->id] = true;
 
 	return;
 }
@@ -105,14 +93,17 @@ NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : networkStruct
 
 	nodeCalculationOrder = new Node *[connectedNodes];
 
-	int nodeOrder = 0;
+	connectedNodes = 0;
 
-	for (int i = 0; i < this->networkStructure.totalInputNodes; i++)
+	bool *visitedNode = new bool[networkStructure.totalNodes]();
+
+	for (int i = (this->networkStructure.totalNodes - this->networkStructure.totalOutputNodes);
+		 i < this->networkStructure.totalNodes; i++)
 	{
-		travelNodeTree(node, this->networkStructure.totalNodes, nodeCalculationOrder, connectedNodes, &nodeOrder, i);
+		travelNodeTree(&node[i], visitedNode, nodeCalculationOrder, &connectedNodes);
 	}
 
-	connectedNodes = nodeOrder;
+	delete[] visitedNode;
 
 	return;
 }
@@ -122,6 +113,11 @@ void NeuralNetwork::setInputNode(int nodeNumber, float value)
 	inputNode[nodeNumber]->value = value;
 
 	return;
+}
+
+float sig(float x)
+{
+	return 1. / (1. + std::pow(e, -x));
 }
 
 // this is shit and can definately be improved
@@ -136,11 +132,16 @@ void NeuralNetwork::update()
 			nodeCalculationOrder[i]->value +=
 				nodeCalculationOrder[i]->parent[x]->value * (*nodeCalculationOrder[i]->weight[x]);
 		}
-
-		nodeCalculationOrder[i]->value = tanh(nodeCalculationOrder[i]->value);
+		// nodeCalculationOrder[i]->value = tanh(nodeCalculationOrder[i]->value);
+		nodeCalculationOrder[i]->value = sig(nodeCalculationOrder[i]->value);
 	}
 
 	return;
+}
+
+float dsig(float sigx)
+{
+	return sigx * (1. - sigx);
 }
 
 void NeuralNetwork::backpropagation(std::vector<float> targetValues)
@@ -151,19 +152,41 @@ void NeuralNetwork::backpropagation(std::vector<float> targetValues)
 		 i++)
 	{
 		float diff =
-			targetValues[i - (networkStructure.totalNodes - networkStructure.totalOutputNodes)] - node[i].value;
+			node[i].value - targetValues[i - (networkStructure.totalNodes - networkStructure.totalOutputNodes)];
 
 		nodeError[i] = diff;
 	}
 
-	for(int i = 0; i < connectedNodes; i++)
+	float nudge = 0;
+
+	for (int i = (connectedNodes - 1); i >= 0; i--)
 	{
-		if(nodeCalculationOrder[i]->id >= (networkStructure.totalNodes - networkStructure.totalOutputNodes))
+		if(nodeCalculationOrder[i]->id > (networkStructure.totalNodes - networkStructure.totalOutputNodes))
 		{
-			for(int x = 0; x < nodeCalculationOrder[i]->parents; x++)
-			{
-				*nodeCalculationOrder[i]->weight[x] = *nodeCalculationOrder[i]->weight[x] + (learningRate * nodeCalculationOrder[i]->parent[x]->value * nodeError[nodeCalculationOrder[i]->id]);
-			}
+
+		}
+
+		for (int x = 0; x < nodeCalculationOrder[i]->parents; x++)
+		{
+			std::cout << *nodeCalculationOrder[i]->weight[x] << '\n';
+
+
+			*nodeCalculationOrder[i]->weight[x] = (*nodeCalculationOrder[i]->weight[x]) -	//
+												  (learningRate *							//
+												   nodeError[nodeCalculationOrder[i]->id] * //
+												   dsig(nodeCalculationOrder[i]->value) *	//
+												   nodeCalculationOrder[i]->parent[x]->value);
+
+			
+
+			std::cout << nodeError[nodeCalculationOrder[i]->id] << '\n';
+			std::cout << dsig(nodeCalculationOrder[i]->value) << '\n';
+			std::cout << nodeCalculationOrder[i]->parent[x]->value << '\n';
+			std::cout << (learningRate * nodeError[nodeCalculationOrder[i]->id] * dsig(nodeCalculationOrder[i]->value) *
+						  nodeCalculationOrder[i]->parent[x]->value)
+					  << '\n';
+			std::cout << *nodeCalculationOrder[i]->weight[x] << '\n';
+			std::cout << '\n';
 		}
 	}
 
