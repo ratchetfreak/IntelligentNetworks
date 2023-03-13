@@ -6,8 +6,23 @@
 
 #define e 2.71828
 
-void travelNodeTree(Node *node, bool *visitedNode, Node **nodeCalculationOrder, int *connectedNodes)
+void calcNodeBPV(Node * node, BackPropValues bpv)
 {
+	node->BPV.emplace_back(bpv);
+	
+	for (int i = 0; i < node->parents; i++)
+	{
+		calcNodeBPV(node->parent[i], bpv.next(node->weight[i]));
+	}
+
+	return;
+}
+
+void calcNodeOrderAndBPV(Node *node, bool *visitedNode, Node **nodeCalculationOrder, int *connectedNodes,
+						 BackPropValues bpv)
+{
+	node->BPV.emplace_back(bpv);
+
 	if (!node->parents)
 	{
 		visitedNode[node->id] = true;
@@ -18,7 +33,11 @@ void travelNodeTree(Node *node, bool *visitedNode, Node **nodeCalculationOrder, 
 	{
 		if (!visitedNode[node->parent[i]->id])
 		{
-			travelNodeTree(node->parent[i], visitedNode, nodeCalculationOrder, connectedNodes);
+			calcNodeOrderAndBPV(node->parent[i], visitedNode, nodeCalculationOrder, connectedNodes,
+								bpv.next(node->weight[i]));
+		} else
+		{
+			calcNodeBPV(node->parent[i], bpv.next(node->weight[i]));
 		}
 	}
 
@@ -97,10 +116,16 @@ NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : networkStruct
 
 	bool *visitedNode = new bool[networkStructure.totalNodes]();
 
+	outputError = new float[networkStructure.totalOutputNodes];
+
 	for (int i = (this->networkStructure.totalNodes - this->networkStructure.totalOutputNodes);
 		 i < this->networkStructure.totalNodes; i++)
 	{
-		travelNodeTree(&node[i], visitedNode, nodeCalculationOrder, &connectedNodes);
+		BackPropValues bpv(
+			&outputError[i - (this->networkStructure.totalNodes - this->networkStructure.totalOutputNodes)],
+			&node[i].value);
+
+		calcNodeOrderAndBPV(&node[i], visitedNode, nodeCalculationOrder, &connectedNodes, bpv);
 	}
 
 	delete[] visitedNode;
@@ -139,14 +164,14 @@ void NeuralNetwork::update()
 	return;
 }
 
-float dsig(float sigx)
+float lazyNewWeight(float weight, float learningRate, float error)
 {
-	return sigx * (1. - sigx);
+	return weight - (learningRate * error * weight);
 }
 
-void NeuralNetwork::backpropagation(std::vector<float> targetValues)
+float NeuralNetwork::backpropagation(std::vector<float> targetValues) // FIXME slow and does redundant calculations
 {
-	float *nodeError = new float[networkStructure.totalNodes];
+	float totalError = 0;
 
 	for (int i = (networkStructure.totalNodes - networkStructure.totalOutputNodes); i < networkStructure.totalNodes;
 		 i++)
@@ -154,45 +179,22 @@ void NeuralNetwork::backpropagation(std::vector<float> targetValues)
 		float diff =
 			node[i].value - targetValues[i - (networkStructure.totalNodes - networkStructure.totalOutputNodes)];
 
-		nodeError[i] = diff;
+		outputError[i - (networkStructure.totalNodes - networkStructure.totalOutputNodes)] = diff;
+
+		totalError += .5 * std::pow(outputError[i - (networkStructure.totalNodes - networkStructure.totalOutputNodes)], 2);
 	}
 
-	float nudge = 0;
+	bool *visitedNode = new bool[networkStructure.totalNodes]();
 
-	for (int i = (connectedNodes - 1); i >= 0; i--)
+	for (int i = 0; i < connectedNodes; i++)
 	{
-		if(nodeCalculationOrder[i]->id > (networkStructure.totalNodes - networkStructure.totalOutputNodes))
-		{
-
-		}
-
-		for (int x = 0; x < nodeCalculationOrder[i]->parents; x++)
-		{
-			std::cout << *nodeCalculationOrder[i]->weight[x] << '\n';
-
-
-			*nodeCalculationOrder[i]->weight[x] = (*nodeCalculationOrder[i]->weight[x]) -	//
-												  (learningRate *							//
-												   nodeError[nodeCalculationOrder[i]->id] * //
-												   dsig(nodeCalculationOrder[i]->value) *	//
-												   nodeCalculationOrder[i]->parent[x]->value);
-
-			
-
-			std::cout << nodeError[nodeCalculationOrder[i]->id] << '\n';
-			std::cout << dsig(nodeCalculationOrder[i]->value) << '\n';
-			std::cout << nodeCalculationOrder[i]->parent[x]->value << '\n';
-			std::cout << (learningRate * nodeError[nodeCalculationOrder[i]->id] * dsig(nodeCalculationOrder[i]->value) *
-						  nodeCalculationOrder[i]->parent[x]->value)
-					  << '\n';
-			std::cout << *nodeCalculationOrder[i]->weight[x] << '\n';
-			std::cout << '\n';
-		}
+		// std::cout << *nodeCalculationOrder[i] << '\n';
+		nodeCalculationOrder[i]->calcNewWeight(learningRate);
 	}
 
-	delete[] nodeError;
+	delete[] visitedNode;
 
-	return;
+	return totalError;
 }
 
 void NeuralNetwork::destroy()
@@ -210,6 +212,7 @@ void NeuralNetwork::destroy()
 	inputNode = nullptr;
 	delete[] nodeCalculationOrder;
 	nodeCalculationOrder = nullptr;
+	delete[] outputError;
 
 	return;
 }
