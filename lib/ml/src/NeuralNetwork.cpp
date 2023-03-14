@@ -6,13 +6,13 @@
 
 #define e 2.71828
 
-void calcNodeBPV(Node * node, BackPropValues bpv)
+void calcNodeBPV(Node *node, BackPropValues bpv)
 {
 	node->BPV.emplace_back(bpv);
-	
+
 	for (int i = 0; i < node->parents; i++)
 	{
-		calcNodeBPV(node->parent[i], bpv.next(node->weight[i]));
+		calcNodeBPV(node->parent[i], bpv.next(node->weight[i], &node->value));
 	}
 
 	return;
@@ -34,10 +34,11 @@ void calcNodeOrderAndBPV(Node *node, bool *visitedNode, Node **nodeCalculationOr
 		if (!visitedNode[node->parent[i]->id])
 		{
 			calcNodeOrderAndBPV(node->parent[i], visitedNode, nodeCalculationOrder, connectedNodes,
-								bpv.next(node->weight[i]));
-		} else
+								bpv.next(node->weight[i], &node->value));
+		}
+		else
 		{
-			calcNodeBPV(node->parent[i], bpv.next(node->weight[i]));
+			calcNodeBPV(node->parent[i], bpv.next(node->weight[i], &node->value));
 		}
 	}
 
@@ -122,8 +123,7 @@ NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : networkStruct
 		 i < this->networkStructure.totalNodes; i++)
 	{
 		BackPropValues bpv(
-			&outputError[i - (this->networkStructure.totalNodes - this->networkStructure.totalOutputNodes)],
-			&node[i].value);
+			&outputError[i - (this->networkStructure.totalNodes - this->networkStructure.totalOutputNodes)]);
 
 		calcNodeOrderAndBPV(&node[i], visitedNode, nodeCalculationOrder, &connectedNodes, bpv);
 	}
@@ -181,7 +181,8 @@ float NeuralNetwork::backpropagation(std::vector<float> targetValues) // FIXME s
 
 		outputError[i - (networkStructure.totalNodes - networkStructure.totalOutputNodes)] = diff;
 
-		totalError += .5 * std::pow(outputError[i - (networkStructure.totalNodes - networkStructure.totalOutputNodes)], 2);
+		totalError +=
+			.5 * std::pow(outputError[i - (networkStructure.totalNodes - networkStructure.totalOutputNodes)], 2);
 	}
 
 	bool *visitedNode = new bool[networkStructure.totalNodes]();

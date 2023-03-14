@@ -10,25 +10,24 @@ class BackPropValues
 {
 	public:
 		float				*outputError;
-		float				*outputValue;
-		float *inputValue;
+		std::vector<float *> value;
 		std::vector<float *> weight;
 
 		BackPropValues()
 		{
 		}
 
-		BackPropValues(float *outputError, float *outputValue)
+		BackPropValues(float *outputError)
 		{
 			this->outputError = outputError;
-			this->outputValue = outputValue;
 		}
 
-		BackPropValues next(float *weight)
+		BackPropValues next(float *weight, float *value)
 		{
 			BackPropValues bpv = *this;
 
 			bpv.weight.emplace_back(weight);
+			bpv.value.emplace_back(value);
 
 			return bpv;
 		}
@@ -38,7 +37,10 @@ class BackPropValues
 			std::stringstream output;
 
 			output << "outputError - " << *bpv.outputError << '\n';
-			output << "outputValue - " << *bpv.outputValue << '\n';
+			for (float *nodeValue : bpv.value)
+			{
+				output << "nodeValue - " << *nodeValue << '\n';
+			}
 			for (float *weight : bpv.weight)
 			{
 				output << "weight - " << *weight << '\n';
@@ -69,11 +71,11 @@ class Node
 
 			for (BackPropValues &bpv : BPV)
 			{
-				float mult = (*bpv.outputError) * dsig(*bpv.outputValue) * learningRate;
+				float mult = (*bpv.outputError) * learningRate;
 
-				for(float *weight : bpv.weight)
+				for (int i = 0; i < bpv.value.size(); i++)
 				{
-					mult *= *weight;
+					mult *= *bpv.weight[i] * dsig(*bpv.value[i]);
 				}
 
 				multiplier += mult;
@@ -81,9 +83,9 @@ class Node
 
 			for (int i = 0; i < parents; i++)
 			{
-				// std::cout << "old " << *weight[i] << '\n';
+				std::cout << "old " << *weight[i] << '\n';
 				*weight[i] -= multiplier * parent[i]->value * dsig(value);
-				// std::cout << "new " << *weight[i] << '\n';
+				std::cout << "new " << *weight[i] << '\n';
 			}
 		}
 
