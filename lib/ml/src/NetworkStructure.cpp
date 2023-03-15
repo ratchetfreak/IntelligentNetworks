@@ -1,6 +1,7 @@
 #include "../inc/NetworkStructure.hpp"
 
 #include <algorithm>
+#include <iostream>
 #include <math.h>
 #include <vector>
 
@@ -78,12 +79,89 @@ NetworkStructure::NetworkStructure(int totalConnections, int totalInputNodes, in
 	this->_totalInputNodes	= totalInputNodes;
 	this->_totalHiddenNodes = totalHiddenNodes;
 	this->_totalOutputNodes = totalOutputNodes;
-	this->_totalNodes = totalInputNodes + totalHiddenNodes + totalOutputNodes;
+	this->_totalNodes		= totalInputNodes + totalHiddenNodes + totalOutputNodes;
 
 	for (int i = 0; i < connection.size(); i++)
 	{
 		this->_connection[i] = connection[i];
 	}
+}
+
+NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> totalHiddenNodes, int totalOutputNodes)
+{
+	this->_totalInputNodes	= totalInputNodes;
+	this->_totalOutputNodes = totalOutputNodes;
+
+	for (int totalHiddenNodes : totalHiddenNodes)
+	{
+		this->_totalHiddenNodes += totalHiddenNodes;
+	}
+
+	if (this->_totalHiddenNodes != 0)
+	{
+		_totalConnections = totalInputNodes * totalHiddenNodes[0];
+
+		for (int i = 0; i < (totalHiddenNodes.size() - 1); i++)
+		{
+			_totalConnections += totalHiddenNodes[i] * totalHiddenNodes[i + 1];
+		}
+
+		_totalConnections += totalHiddenNodes[totalHiddenNodes.size() - 1] * totalOutputNodes;
+
+		this->_connection = new Connection[totalConnections];
+
+		int i	 = 0;
+		int node = 0;
+
+		for (int x = 0; x < totalInputNodes; x++)
+		{
+			for (int y = 0; y < totalHiddenNodes[0]; y++)
+			{
+				this->_connection[i] = {x, totalInputNodes + y, 1};
+				i++;
+			}
+		}
+
+		node += totalInputNodes;
+
+		for (int z = 0; z < (totalHiddenNodes.size() - 1); z++)
+		{
+			for (int x = 0; x < totalHiddenNodes[z]; x++)
+			{
+				for (int y = 0; y < totalHiddenNodes[z + 1]; y++)
+				{
+					this->_connection[i] = {node + x, node + totalHiddenNodes[z] + y, 1};
+					i++;
+				}
+			}
+			node += totalHiddenNodes[z];
+		}
+
+		for (int x = 0; x < totalHiddenNodes[totalHiddenNodes.size() - 1]; x++)
+		{
+			for (int y = 0; y < totalOutputNodes; y++)
+			{
+				this->_connection[i] = {node + x, node + totalHiddenNodes[totalHiddenNodes.size() - 1] + y, 1};
+				i++;
+			}
+		}
+	}
+	else
+	{
+		_totalConnections = totalInputNodes * totalOutputNodes;
+
+		this->_connection = new Connection[totalConnections];
+
+		for (int x = 0; x < totalInputNodes; x++)
+		{
+			for (int y = 0; y < totalOutputNodes; y++)
+			{
+				this->_connection[(x * totalOutputNodes) + y] = {x, totalInputNodes + y, 1};
+			}
+		}
+	}
+
+	_totalNodes = this->totalInputNodes + this->totalHiddenNodes + this->totalOutputNodes;
 }
 
 void NetworkStructure::addConnection(Connection connection)
@@ -227,6 +305,14 @@ void NetworkStructure::mutate()
 		_connection[nonExistIndex].startNode = startNode;
 		_connection[nonExistIndex].endNode	 = endNode;
 		_connection[nonExistIndex].weight	 = ((rand() / (float)RAND_MAX) * 2) - 1;
+	}
+}
+
+void NetworkStructure::randomWeights(NetworkStructure &networkStructure)
+{
+	for (int i = 0; i < networkStructure.totalConnections; i++)
+	{
+		networkStructure._connection[i].weight = ((std::rand() / (float)RAND_MAX) * 2) - 1;
 	}
 }
 

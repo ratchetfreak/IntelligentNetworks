@@ -13,20 +13,26 @@ class Connection
 		bool  valid		= true;
 		int	  id		= -1;
 		bool  exists	= true;
-		
+
 		Connection();
 		Connection(int start, int end, float weight);
+};
+
+enum NetworkStructureType
+{
+	Layered,
+	Dynamic,
 };
 
 class NetworkStructure
 {
 	private:
-		Connection *_connection;
-		int			_totalConnections;
-		int			_totalInputNodes;
-		int			_totalHiddenNodes;
-		int			_totalOutputNodes;
-		int			_totalNodes;
+		Connection *_connection		  = nullptr;
+		int			_totalConnections = 0;
+		int			_totalInputNodes  = 0;
+		int			_totalHiddenNodes = 0;
+		int			_totalOutputNodes = 0;
+		int			_totalNodes		  = 0;
 
 	public:
 		const Connection *const &connection		  = _connection;
@@ -36,15 +42,19 @@ class NetworkStructure
 		const int				&totalOutputNodes = _totalOutputNodes;
 		const int				&totalNodes		  = _totalNodes;
 
-		NetworkStructure(const NetworkStructure & networkStructure);
+		NetworkStructure(const NetworkStructure &networkStructure);
 
 		NetworkStructure(int totalConnections, int totalInputNodes, int totalHiddenNodes, int totalOutputNodes,
 						 std::vector<Connection> connection);
+
+		NetworkStructure(int totalInputNodes, std::vector<int> totalHiddenNodes, int totalOutputNodes);
 
 		void addConnection(Connection connection);
 		void removeConnection(int index);
 
 		void mutate();
+
+		static void randomWeights(NetworkStructure &networkStructure);
 
 		void validate();
 

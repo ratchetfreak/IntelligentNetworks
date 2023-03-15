@@ -81,6 +81,68 @@ void XORexample()
 	network.destroy();
 }
 
+void XORexample2()
+{
+	NetworkStructure netStruct(3, {10, 10, 10}, 1);
+
+	// NetworkStructure::randomWeights(netStruct);
+
+	std::cout << netStruct << '\n';
+
+	NeuralNetwork network(netStruct);
+
+	network.setInputNode(0, 1);
+
+	std::fstream fs("plot.txt", std::ios::out);
+
+	for (int i = 0; i < 10000; i++)
+	{
+		network.setInputNode(1, 0);
+		network.setInputNode(2, 0);
+		network.update();
+		fs << i << " " << network.backpropagation({0}) << '\n';
+
+		network.setInputNode(1, 0);
+		network.setInputNode(2, 1);
+		network.update();
+		fs << i << " " << network.backpropagation({1}) << '\n';
+
+		network.setInputNode(1, 1);
+		network.setInputNode(2, 0);
+		network.update();
+		fs << i << " " << network.backpropagation({1}) << '\n';
+
+		network.setInputNode(1, 1);
+		network.setInputNode(2, 1);
+		network.update();
+		fs << i << " " << network.backpropagation({0}) << '\n';
+	}
+
+	network.setInputNode(1, 0);
+	network.setInputNode(2, 0);
+	network.update();
+	std::cout << network.getNode(network.getTotalNodes()-1).value << '\n';
+
+	network.setInputNode(1, 0);
+	network.setInputNode(2, 1);
+	network.update();
+	std::cout << network.getNode(network.getTotalNodes()-1).value << '\n';
+
+	network.setInputNode(1, 1);
+	network.setInputNode(2, 0);
+	network.update();
+	std::cout << network.getNode(network.getTotalNodes()-1).value << '\n';
+
+	network.setInputNode(1, 1);
+	network.setInputNode(2, 1);
+	network.update();
+	std::cout << network.getNode(network.getTotalNodes()-1).value << '\n';
+
+	fs.close();
+
+	network.destroy();
+}
+
 void test()
 {
 	NetworkStructure netStruct(12, 4, 2, 2,
@@ -129,6 +191,9 @@ void test()
 
 int main()
 {
+	std::srand(time(NULL));
+
 	// XORexample();
-	test();
+	// test();
+	XORexample2();
 }

@@ -83,9 +83,7 @@ class Node
 
 			for (int i = 0; i < parents; i++)
 			{
-				std::cout << "old " << *weight[i] << '\n';
 				*weight[i] -= multiplier * parent[i]->value * dsig(value);
-				std::cout << "new " << *weight[i] << '\n';
 			}
 		}
 
