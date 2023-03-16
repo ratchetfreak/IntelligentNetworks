@@ -5,7 +5,7 @@
 #include <math.h>
 #include <vector>
 
-void travelBranchForLoop(Connection *connection, int id, bool *isNodeVisited, int totalConnections,
+void travelBranchForLoop(in::Connection *connection, int id, bool *isNodeVisited, int totalConnections,
 						 int totalNodes) // recursion hell
 {
 	isNodeVisited[connection[id].startNode] = true;
@@ -44,18 +44,18 @@ void travelBranchForLoop(Connection *connection, int id, bool *isNodeVisited, in
 	return;
 }
 
-Connection::Connection()
+in::Connection::Connection()
 {
 }
 
-Connection::Connection(int start, int end, float weight)
+in::Connection::Connection(int start, int end, float weight)
 {
 	startNode	 = start;
 	endNode		 = end;
 	this->weight = weight;
 }
 
-NetworkStructure::NetworkStructure(const NetworkStructure &networkStructure)
+in::NetworkStructure::NetworkStructure(const NetworkStructure &networkStructure)
 {
 	_totalConnections = networkStructure._totalConnections;
 	_totalInputNodes  = networkStructure._totalInputNodes;
@@ -71,7 +71,7 @@ NetworkStructure::NetworkStructure(const NetworkStructure &networkStructure)
 	}
 }
 
-NetworkStructure::NetworkStructure(int totalConnections, int totalInputNodes, int totalHiddenNodes,
+in::NetworkStructure::NetworkStructure(int totalConnections, int totalInputNodes, int totalHiddenNodes,
 								   int totalOutputNodes, std::vector<Connection> connection)
 {
 	this->_connection		= new Connection[totalConnections];
@@ -87,7 +87,7 @@ NetworkStructure::NetworkStructure(int totalConnections, int totalInputNodes, in
 	}
 }
 
-NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> totalHiddenNodes, int totalOutputNodes)
+in::NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> totalHiddenNodes, int totalOutputNodes)
 {
 	this->_totalInputNodes	= totalInputNodes;
 	this->_totalOutputNodes = totalOutputNodes;
@@ -164,7 +164,7 @@ NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> totalHi
 	_totalNodes = this->totalInputNodes + this->totalHiddenNodes + this->totalOutputNodes;
 }
 
-void NetworkStructure::addConnection(Connection connection)
+void in::NetworkStructure::addConnection(Connection connection)
 {
 	for (int i = 0; i < totalConnections; i++)
 	{
@@ -175,13 +175,13 @@ void NetworkStructure::addConnection(Connection connection)
 	}
 }
 
-void NetworkStructure::removeConnection(int index)
+void in::NetworkStructure::removeConnection(int index)
 {
 	_connection[index].valid  = false;
 	_connection[index].exists = false;
 }
 
-void NetworkStructure::mutate()
+void in::NetworkStructure::mutate()
 {
 	int nonExistIndex = -1;
 
@@ -308,7 +308,7 @@ void NetworkStructure::mutate()
 	}
 }
 
-void NetworkStructure::randomWeights(NetworkStructure &networkStructure)
+void in::NetworkStructure::randomWeights(NetworkStructure &networkStructure)
 {
 	for (int i = 0; i < networkStructure.totalConnections; i++)
 	{
@@ -316,7 +316,7 @@ void NetworkStructure::randomWeights(NetworkStructure &networkStructure)
 	}
 }
 
-void NetworkStructure::validate()
+void in::NetworkStructure::validate()
 {
 	// give every connection an id
 	for (int i = 0; i < totalConnections; i++)
@@ -428,7 +428,7 @@ void NetworkStructure::validate()
 	}
 }
 
-NetworkStructure::~NetworkStructure()
+in::NetworkStructure::~NetworkStructure()
 {
 	delete[] connection;
 }

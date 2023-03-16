@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.10)
 project(bin)
 
 file(GLOB_RECURSE SRC ./src/*.cpp)
-file(GLOB_RECURSE AGL ./lib/ml/src/*.cpp)
+file(GLOB_RECURSE IN ../../IntNet/src/*.cpp)
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -21,7 +21,4 @@ elseif(CMAKE_BUILD_TYPE MATCHES Release)
 	message(STATUS "Building with release flags")
 endif()
 
-add_executable(bin.out ${SRC} ${AGL})
-
-target_link_libraries(bin.out -lX11 -lGL -lGLEW -lSOIL -lfreetype)
-include_directories("/usr/include/freetype2")
+add_executable(bin.out ${SRC} ${IN})

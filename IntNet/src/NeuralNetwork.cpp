@@ -6,7 +6,7 @@
 
 #define e 2.71828
 
-void calcNodeBPV(Node *node, BackPropValues bpv)
+void calcNodeBPV(in::Node *node, in::BackPropValues bpv)
 {
 	node->BPV.emplace_back(bpv);
 
@@ -18,8 +18,8 @@ void calcNodeBPV(Node *node, BackPropValues bpv)
 	return;
 }
 
-void calcNodeOrderAndBPV(Node *node, bool *visitedNode, Node **nodeCalculationOrder, int *connectedNodes,
-						 BackPropValues bpv)
+void calcNodeOrderAndBPV(in::Node *node, bool *visitedNode, in::Node **nodeCalculationOrder, int *connectedNodes,
+						 in::BackPropValues bpv)
 {
 	node->BPV.emplace_back(bpv);
 
@@ -49,7 +49,7 @@ void calcNodeOrderAndBPV(Node *node, bool *visitedNode, Node **nodeCalculationOr
 	return;
 }
 
-NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : networkStructure(networkStructure)
+in::NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : networkStructure(networkStructure)
 {
 	node	  = new Node[this->networkStructure.totalNodes];
 	inputNode = new Node *[this->networkStructure.totalInputNodes];
@@ -133,7 +133,7 @@ NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : networkStruct
 	return;
 }
 
-void NeuralNetwork::setInputNode(int nodeNumber, float value)
+void in::NeuralNetwork::setInputNode(int nodeNumber, float value)
 {
 	inputNode[nodeNumber]->value = value;
 
@@ -146,7 +146,7 @@ float sig(float x)
 }
 
 // this is shit and can definately be improved
-void NeuralNetwork::update()
+void in::NeuralNetwork::update()
 {
 	for (int i = 0; i < connectedNodes; i++)
 	{
@@ -169,7 +169,7 @@ float lazyNewWeight(float weight, float learningRate, float error)
 	return weight - (learningRate * error * weight);
 }
 
-float NeuralNetwork::backpropagation(std::vector<float> targetValues) // FIXME slow and does redundant calculations
+float in::NeuralNetwork::backpropagation(std::vector<float> targetValues) // FIXME slow and does redundant calculations
 {
 	float totalError = 0;
 
@@ -198,7 +198,7 @@ float NeuralNetwork::backpropagation(std::vector<float> targetValues) // FIXME s
 	return totalError;
 }
 
-void NeuralNetwork::destroy()
+void in::NeuralNetwork::destroy()
 {
 	// free memory in nodes
 	for (int i = 0; i < networkStructure.totalNodes; i++)
@@ -218,22 +218,22 @@ void NeuralNetwork::destroy()
 	return;
 }
 
-Node NeuralNetwork::getNode(int nodeNumber)
+in::Node in::NeuralNetwork::getNode(int nodeNumber)
 {
 	return node[nodeNumber];
 }
 
-int NeuralNetwork::getTotalNodes()
+int in::NeuralNetwork::getTotalNodes()
 {
 	return networkStructure.totalNodes;
 }
 
-int NeuralNetwork::getTotalInputNodes()
+int in::NeuralNetwork::getTotalInputNodes()
 {
 	return networkStructure.totalInputNodes;
 }
 
-int NeuralNetwork::getTotalConnections()
+int in::NeuralNetwork::getTotalConnections()
 {
 	return networkStructure.totalConnections;
 }

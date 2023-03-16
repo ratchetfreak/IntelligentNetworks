@@ -1,4 +1,4 @@
-#include "../lib/ml/ml.hpp"
+#include "../../../IntNet/intnet.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -10,7 +10,7 @@ inline float ranfloat(float f1, float f2)
 
 void XORexample()
 {
-	NetworkStructure netStruct(9, 5, 2, 1,
+	in::NetworkStructure netStruct(9, 5, 2, 1,
 							   {
 								   {0, 5, ranfloat(-1, 1)}, //
 								   {1, 6, ranfloat(-1, 1)}, //
@@ -25,7 +25,7 @@ void XORexample()
 
 	std::cout << netStruct << '\n';
 
-	NeuralNetwork network(netStruct);
+	in::NeuralNetwork network(netStruct);
 
 	network.setInputNode(0, 1);
 	network.setInputNode(1, 1);
@@ -83,13 +83,13 @@ void XORexample()
 
 void XORexample2()
 {
-	NetworkStructure netStruct(3, {10, 10, 10}, 1);
+	in::NetworkStructure netStruct(3, {10, 10, 10}, 1);
 
-	// NetworkStructure::randomWeights(netStruct);
+	in::NetworkStructure::randomWeights(netStruct);
 
 	std::cout << netStruct << '\n';
 
-	NeuralNetwork network(netStruct);
+	in::NeuralNetwork network(netStruct);
 
 	network.setInputNode(0, 1);
 
@@ -143,57 +143,10 @@ void XORexample2()
 	network.destroy();
 }
 
-void test()
-{
-	NetworkStructure netStruct(12, 4, 2, 2,
-							   {
-								   {0, 4, 0.25}, //
-								   {0, 5, 0.25}, //
-								   {1, 6, 0.35}, //
-								   {1, 7, 0.35}, //
-
-								   {2, 4, 0.1}, //
-								   {2, 5, 0.2}, //
-								   {3, 4, 0.3}, //
-								   {3, 5, 0.4}, //
-								   {4, 6, 0.5}, //
-								   {5, 6, 0.6}, //
-								   {4, 7, 0.7}, //
-								   {5, 7, 0.8}, //
-							   });
-
-	std::cout << netStruct << '\n';
-
-	NeuralNetwork network(netStruct);
-
-	network.setInputNode(0, 1);
-	network.setInputNode(1, 1);
-	network.setInputNode(2, 0.1);
-	network.setInputNode(3, 0.5);
-
-	network.update();
-
-	std::cout << network.getNode(6).value << '\n';
-	std::cout << network.getNode(7).value << '\n';
-	std::cout << '\n';
-
-	for (int i = 0; i < 1; i++)
-	{
-		network.backpropagation({0.05, 0.95});
-		network.update();
-		std::cout << network.getNode(6).value << '\n';
-		std::cout << network.getNode(7).value << '\n';
-		std::cout << '\n';
-	}
-
-	network.destroy();
-}
-
 int main()
 {
 	std::srand(time(NULL));
 
 	// XORexample();
-	// test();
 	XORexample2();
 }
