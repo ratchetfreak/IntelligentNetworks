@@ -109,19 +109,26 @@ namespace in
 	class NeuralNetwork
 	{
 		private:
-			NetworkStructure networkStructure;
+			NetworkStructure _networkStructure;
 
-			int connectedNodes = 0;
+			int _connectedNodes = 0;
 
-			Node  *node; // INPUT HIDDEN OUTPUT
-			Node **inputNode;
-			Node **nodeCalculationOrder;
+			Node  *_node; // INPUT HIDDEN OUTPUT
+			Node **_nodeCalculationOrder;
 
-			float learningRate = 0.6;
+			float _learningRate = 0.6;
 
-			float *outputError;
+			float *_outputError;
 
 		public:
+			Node **inputNode;
+			const NetworkStructure	 &structure	   = _networkStructure;
+			const int				 &connectedNodes	   = _connectedNodes;
+			const Node *const		 &node				   = _node;
+			const Node *const *const &nodeCalculationOrder = _nodeCalculationOrder;
+			const float				 &learningRate		   = _learningRate;
+			const float *const		 &outputError		   = _outputError;
+
 			NeuralNetwork(NetworkStructure &networkStructure);
 			// ~NeuralNetwork();
 
@@ -132,11 +139,5 @@ namespace in
 			float backpropagation(std::vector<float> targetValues);
 
 			void destroy();
-
-			Connection getConnection(int connectionNumber);
-			Node	   getNode(int nodeNumber);
-			int		   getTotalNodes();
-			int		   getTotalInputNodes();
-			int		   getTotalConnections();
 	};
 } // namespace in

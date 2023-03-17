@@ -49,52 +49,52 @@ void calcNodeOrderAndBPV(in::Node *node, bool *visitedNode, in::Node **nodeCalcu
 	return;
 }
 
-in::NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : networkStructure(networkStructure)
+in::NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : _networkStructure(networkStructure)
 {
-	node	  = new Node[this->networkStructure.totalNodes];
-	inputNode = new Node *[this->networkStructure.totalInputNodes];
+	_node	  = new Node[this->_networkStructure.totalNodes];
+	inputNode = new Node *[this->_networkStructure.totalInputNodes];
 
 	// link input node pointers to actual nodes
-	for (int i = 0; i < this->networkStructure.totalInputNodes; i++)
+	for (int i = 0; i < this->_networkStructure.totalInputNodes; i++)
 	{
-		inputNode[i] = &node[i];
+		inputNode[i] = &_node[i];
 	}
 
 	// give every node an ID
-	for (int i = 0; i < this->networkStructure.totalNodes; i++)
+	for (int i = 0; i < this->_networkStructure.totalNodes; i++)
 	{
-		node[i].id = i;
+		_node[i].id = i;
 	}
 
-	this->networkStructure.validate();
+	this->_networkStructure.validate();
 
 	// set the amount of parents every node has according to connection
-	for (int y = 0; y < this->networkStructure.totalConnections; y++)
+	for (int y = 0; y < this->_networkStructure.totalConnections; y++)
 	{
-		if (this->networkStructure.connection[y].valid)
+		if (this->_networkStructure.connection[y].valid)
 		{
-			node[this->networkStructure.connection[y].endNode].parents++;
+			_node[this->_networkStructure.connection[y].endNode].parents++;
 		}
 	}
 
 	// allocate memory for every node to store a pointer to its parents
-	for (int i = 0; i < this->networkStructure.totalNodes; i++)
+	for (int i = 0; i < this->_networkStructure.totalNodes; i++)
 	{
-		if (node[i].parents)
+		if (_node[i].parents)
 		{
-			node[i].parent = new Node *[node[i].parents];
-			node[i].weight = new float *[node[i].parents];
+			_node[i].parent = new Node *[_node[i].parents];
+			_node[i].weight = new float *[_node[i].parents];
 
 			int setParents = 0;
 
-			for (int x = 0; x < this->networkStructure.totalConnections; x++)
+			for (int x = 0; x < this->_networkStructure.totalConnections; x++)
 			{
-				if (this->networkStructure.connection[x].valid)
+				if (this->_networkStructure.connection[x].valid)
 				{
-					if (this->networkStructure.connection[x].endNode == i)
+					if (this->_networkStructure.connection[x].endNode == i)
 					{
-						node[i].parent[setParents] = &node[this->networkStructure.connection[x].startNode];
-						node[i].weight[setParents] = (float *)(&this->networkStructure.connection[x].weight);
+						_node[i].parent[setParents] = &_node[this->_networkStructure.connection[x].startNode];
+						_node[i].weight[setParents] = (float *)(&this->_networkStructure.connection[x].weight);
 
 						setParents++;
 					}
@@ -103,29 +103,29 @@ in::NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : networkSt
 		}
 	}
 
-	for (int i = 0; i < this->networkStructure.totalNodes; i++)
+	for (int i = 0; i < this->_networkStructure.totalNodes; i++)
 	{
-		if (node[i].parents)
+		if (_node[i].parents)
 		{
-			connectedNodes++;
+			_connectedNodes++;
 		}
 	}
 
-	nodeCalculationOrder = new Node *[connectedNodes];
+	_nodeCalculationOrder = new Node *[_connectedNodes];
 
-	connectedNodes = 0;
+	_connectedNodes = 0;
 
 	bool *visitedNode = new bool[networkStructure.totalNodes]();
 
-	outputError = new float[networkStructure.totalOutputNodes];
+	_outputError = new float[networkStructure.totalOutputNodes];
 
-	for (int i = (this->networkStructure.totalNodes - this->networkStructure.totalOutputNodes);
-		 i < this->networkStructure.totalNodes; i++)
+	for (int i = (this->_networkStructure.totalNodes - this->_networkStructure.totalOutputNodes);
+		 i < this->_networkStructure.totalNodes; i++)
 	{
 		BackPropValues bpv(
-			&outputError[i - (this->networkStructure.totalNodes - this->networkStructure.totalOutputNodes)]);
+			&_outputError[i - (this->_networkStructure.totalNodes - this->_networkStructure.totalOutputNodes)]);
 
-		calcNodeOrderAndBPV(&node[i], visitedNode, nodeCalculationOrder, &connectedNodes, bpv);
+		calcNodeOrderAndBPV(&_node[i], visitedNode, _nodeCalculationOrder, &_connectedNodes, bpv);
 	}
 
 	delete[] visitedNode;
@@ -148,17 +148,17 @@ float sig(float x)
 // this is shit and can definately be improved
 void in::NeuralNetwork::update()
 {
-	for (int i = 0; i < connectedNodes; i++)
+	for (int i = 0; i < _connectedNodes; i++)
 	{
-		nodeCalculationOrder[i]->value = 0;
+		_nodeCalculationOrder[i]->value = 0;
 
-		for (int x = 0; x < nodeCalculationOrder[i]->parents; x++)
+		for (int x = 0; x < _nodeCalculationOrder[i]->parents; x++)
 		{
-			nodeCalculationOrder[i]->value +=
-				nodeCalculationOrder[i]->parent[x]->value * (*nodeCalculationOrder[i]->weight[x]);
+			_nodeCalculationOrder[i]->value +=
+				_nodeCalculationOrder[i]->parent[x]->value * (*_nodeCalculationOrder[i]->weight[x]);
 		}
 		// nodeCalculationOrder[i]->value = tanh(nodeCalculationOrder[i]->value);
-		nodeCalculationOrder[i]->value = sig(nodeCalculationOrder[i]->value);
+		_nodeCalculationOrder[i]->value = sig(_nodeCalculationOrder[i]->value);
 	}
 
 	return;
@@ -173,24 +173,24 @@ float in::NeuralNetwork::backpropagation(std::vector<float> targetValues) // FIX
 {
 	float totalError = 0;
 
-	for (int i = (networkStructure.totalNodes - networkStructure.totalOutputNodes); i < networkStructure.totalNodes;
+	for (int i = (_networkStructure.totalNodes - _networkStructure.totalOutputNodes); i < _networkStructure.totalNodes;
 		 i++)
 	{
 		float diff =
-			node[i].value - targetValues[i - (networkStructure.totalNodes - networkStructure.totalOutputNodes)];
+			_node[i].value - targetValues[i - (_networkStructure.totalNodes - _networkStructure.totalOutputNodes)];
 
-		outputError[i - (networkStructure.totalNodes - networkStructure.totalOutputNodes)] = diff;
+		_outputError[i - (_networkStructure.totalNodes - _networkStructure.totalOutputNodes)] = diff;
 
 		totalError +=
-			.5 * std::pow(outputError[i - (networkStructure.totalNodes - networkStructure.totalOutputNodes)], 2);
+			.5 * std::pow(_outputError[i - (_networkStructure.totalNodes - _networkStructure.totalOutputNodes)], 2);
 	}
 
-	bool *visitedNode = new bool[networkStructure.totalNodes]();
+	bool *visitedNode = new bool[_networkStructure.totalNodes]();
 
-	for (int i = 0; i < connectedNodes; i++)
+	for (int i = 0; i < _connectedNodes; i++)
 	{
 		// std::cout << *nodeCalculationOrder[i] << '\n';
-		nodeCalculationOrder[i]->calcNewWeight(learningRate);
+		_nodeCalculationOrder[i]->calcNewWeight(_learningRate);
 	}
 
 	delete[] visitedNode;
@@ -201,39 +201,19 @@ float in::NeuralNetwork::backpropagation(std::vector<float> targetValues) // FIX
 void in::NeuralNetwork::destroy()
 {
 	// free memory in nodes
-	for (int i = 0; i < networkStructure.totalNodes; i++)
+	for (int i = 0; i < _networkStructure.totalNodes; i++)
 	{
-		delete[] node[i].weight;
-		delete[] node[i].parent;
+		delete[] _node[i].weight;
+		delete[] _node[i].parent;
 	}
 
-	delete[] node;
-	node = nullptr;
+	delete[] _node;
+	_node = nullptr;
 	delete[] inputNode;
 	inputNode = nullptr;
-	delete[] nodeCalculationOrder;
-	nodeCalculationOrder = nullptr;
-	delete[] outputError;
+	delete[] _nodeCalculationOrder;
+	_nodeCalculationOrder = nullptr;
+	delete[] _outputError;
 
 	return;
-}
-
-in::Node in::NeuralNetwork::getNode(int nodeNumber)
-{
-	return node[nodeNumber];
-}
-
-int in::NeuralNetwork::getTotalNodes()
-{
-	return networkStructure.totalNodes;
-}
-
-int in::NeuralNetwork::getTotalInputNodes()
-{
-	return networkStructure.totalInputNodes;
-}
-
-int in::NeuralNetwork::getTotalConnections()
-{
-	return networkStructure.totalConnections;
 }

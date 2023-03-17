@@ -59,22 +59,22 @@ void XORexample()
 	network.setInputNode(3, 0);
 	network.setInputNode(4, 0);
 	network.update();
-	std::cout << network.getNode(7).value << '\n';
+	std::cout << network.node[7].value << '\n';
 
 	network.setInputNode(3, 0);
 	network.setInputNode(4, 1);
 	network.update();
-	std::cout << network.getNode(7).value << '\n';
+	std::cout << network.node[7].value << '\n';
 
 	network.setInputNode(3, 1);
 	network.setInputNode(4, 0);
 	network.update();
-	std::cout << network.getNode(7).value << '\n';
+	std::cout << network.node[7].value << '\n';
 
 	network.setInputNode(3, 1);
 	network.setInputNode(4, 1);
 	network.update();
-	std::cout << network.getNode(7).value << '\n';
+	std::cout << network.node[7].value << '\n';
 
 	fs.close();
 
@@ -121,22 +121,22 @@ void XORexample2()
 	network.setInputNode(1, 0);
 	network.setInputNode(2, 0);
 	network.update();
-	std::cout << network.getNode(network.getTotalNodes()-1).value << '\n';
+	std::cout << network.node[network.structure.totalNodes-1].value << '\n';
 
 	network.setInputNode(1, 0);
 	network.setInputNode(2, 1);
 	network.update();
-	std::cout << network.getNode(network.getTotalNodes()-1).value << '\n';
+	std::cout << network.node[network.structure.totalNodes-1].value << '\n';
 
 	network.setInputNode(1, 1);
 	network.setInputNode(2, 0);
 	network.update();
-	std::cout << network.getNode(network.getTotalNodes()-1).value << '\n';
+	std::cout << network.node[network.structure.totalNodes-1].value << '\n';
 
 	network.setInputNode(1, 1);
 	network.setInputNode(2, 1);
 	network.update();
-	std::cout << network.getNode(network.getTotalNodes()-1).value << '\n';
+	std::cout << network.node[network.structure.totalNodes-1].value << '\n';
 
 	fs.close();
 

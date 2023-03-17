@@ -18,6 +18,15 @@ namespace in
 
 			Connection();
 			Connection(int start, int end, float weight);
+
+			friend std::ostream &operator<<(std::ostream &os, const Connection &connection)
+			{
+				std::stringstream output;
+
+				output << connection.startNode << " to " << connection.endNode << ", weight " << connection.weight;
+
+				return os << output.str();
+			}
 	};
 
 	enum NetworkStructureType
