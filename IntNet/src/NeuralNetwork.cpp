@@ -49,23 +49,8 @@ void calcNodeOrderAndBPV(in::Node *node, bool *visitedNode, in::Node **nodeCalcu
 	return;
 }
 
-in::NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : _networkStructure(networkStructure)
+void in::NeuralNetwork::dynamicCons()
 {
-	_node	  = new Node[this->_networkStructure.totalNodes];
-	inputNode = new Node *[this->_networkStructure.totalInputNodes];
-
-	// link input node pointers to actual nodes
-	for (int i = 0; i < this->_networkStructure.totalInputNodes; i++)
-	{
-		inputNode[i] = &_node[i];
-	}
-
-	// give every node an ID
-	for (int i = 0; i < this->_networkStructure.totalNodes; i++)
-	{
-		_node[i].id = i;
-	}
-
 	this->_networkStructure.validate();
 
 	// set the amount of parents every node has according to connection
@@ -115,9 +100,9 @@ in::NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : _networkS
 
 	_connectedNodes = 0;
 
-	bool *visitedNode = new bool[networkStructure.totalNodes]();
+	bool *visitedNode = new bool[_networkStructure.totalNodes]();
 
-	_outputError = new float[networkStructure.totalOutputNodes];
+	_outputError = new float[_networkStructure.totalOutputNodes];
 
 	for (int i = (this->_networkStructure.totalNodes - this->_networkStructure.totalOutputNodes);
 		 i < this->_networkStructure.totalNodes; i++)
@@ -131,6 +116,92 @@ in::NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : _networkS
 	delete[] visitedNode;
 
 	return;
+}
+
+void in::NeuralNetwork::layeredCons()
+{
+	// set the amount of parents every node has according to connection
+	for (int y = 0; y < this->_networkStructure.totalConnections; y++)
+	{
+		if (this->_networkStructure.connection[y].valid)
+		{
+			_node[this->_networkStructure.connection[y].endNode].parents++;
+		}
+	}
+
+	// allocate memory for every node to store a pointer to its parents
+	for (int i = 0; i < this->_networkStructure.totalNodes; i++)
+	{
+		if (_node[i].parents)
+		{
+			_node[i].parent = new Node *[_node[i].parents];
+			_node[i].weight = new float *[_node[i].parents];
+
+			int setParents = 0;
+
+			for (int x = 0; x < this->_networkStructure.totalConnections; x++)
+			{
+				if (this->_networkStructure.connection[x].valid)
+				{
+					if (this->_networkStructure.connection[x].endNode == i)
+					{
+						_node[i].parent[setParents] = &_node[this->_networkStructure.connection[x].startNode];
+						_node[i].weight[setParents] = (float *)(&this->_networkStructure.connection[x].weight);
+
+						setParents++;
+					}
+				}
+			}
+		}
+	}
+
+	_connectedNodes		  = structure.totalNodes - structure.totalInputNodes;
+	_nodeCalculationOrder = new Node *[_connectedNodes];
+
+	for (int i = 0; i < _connectedNodes; i++)
+	{
+		_nodeCalculationOrder[i] = &_node[i + structure.totalInputNodes];
+	}
+
+	_outputError = new float[_networkStructure.totalOutputNodes];
+
+	for (int i = (this->_networkStructure.totalNodes - this->_networkStructure.totalOutputNodes);
+		 i < this->_networkStructure.totalNodes; i++)
+	{
+		BackPropValues bpv(
+			&_outputError[i - (this->_networkStructure.totalNodes - this->_networkStructure.totalOutputNodes)]);
+
+		calcNodeBPV(&_node[i], bpv);
+	}
+}
+
+in::NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : _networkStructure(networkStructure)
+{
+	_node	  = new Node[this->_networkStructure.totalNodes];
+	inputNode = new Node *[this->_networkStructure.totalInputNodes];
+
+	ouputNode = &_node[structure.totalNodes - structure.totalOutputNodes];
+
+	// link input node pointers to actual nodes
+	for (int i = 0; i < this->_networkStructure.totalInputNodes; i++)
+	{
+		inputNode[i] = &_node[i];
+	}
+
+	// give every node an ID
+	for (int i = 0; i < this->_networkStructure.totalNodes; i++)
+	{
+		_node[i].id = i;
+	}
+
+	if (structure.type == Dynamic)
+	{
+		dynamicCons();
+	}
+	else if (structure.type == Layered)
+	{
+		layeredCons();
+	}
 }
 
 void in::NeuralNetwork::setInputNode(int nodeNumber, float value)
@@ -190,7 +261,7 @@ float in::NeuralNetwork::backpropagation(std::vector<float> targetValues) // FIX
 	for (int i = 0; i < _connectedNodes; i++)
 	{
 		// std::cout << *nodeCalculationOrder[i] << '\n';
-		_nodeCalculationOrder[i]->calcNewWeight(_learningRate);
+		_nodeCalculationOrder[i]->calcNewWeight(learningRate);
 	}
 
 	delete[] visitedNode;

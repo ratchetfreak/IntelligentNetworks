@@ -38,20 +38,24 @@ namespace in
 	class NetworkStructure
 	{
 		private:
-			Connection *_connection		  = nullptr;
-			int			_totalConnections = 0;
-			int			_totalInputNodes  = 0;
-			int			_totalHiddenNodes = 0;
-			int			_totalOutputNodes = 0;
-			int			_totalNodes		  = 0;
+			Connection			*_connection	   = nullptr;
+			int					 _totalConnections = 0;
+			int					 _totalInputNodes  = 0;
+			int					 _totalHiddenNodes = 0;
+			int					 _totalOutputNodes = 0;
+			int					 _totalNodes	   = 0;
+			NetworkStructureType _type			   = Dynamic;
+			std::vector<int>	 _hiddenLayerNodes;
 
 		public:
-			const Connection *const &connection		  = _connection;
-			const int				&totalConnections = _totalConnections;
-			const int				&totalInputNodes  = _totalInputNodes;
-			const int				&totalHiddenNodes = _totalHiddenNodes;
-			const int				&totalOutputNodes = _totalOutputNodes;
-			const int				&totalNodes		  = _totalNodes;
+			const Connection *const	   &connection		 = _connection;
+			const int				   &totalConnections = _totalConnections;
+			const int				   &totalInputNodes	 = _totalInputNodes;
+			const int				   &totalHiddenNodes = _totalHiddenNodes;
+			const int				   &totalOutputNodes = _totalOutputNodes;
+			const int				   &totalNodes		 = _totalNodes;
+			const NetworkStructureType &type			 = _type;
+			const std::vector<int>	   &hiddenLayerNodes = _hiddenLayerNodes;
 
 			NetworkStructure(const NetworkStructure &networkStructure);
 

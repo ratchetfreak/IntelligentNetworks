@@ -83,11 +83,13 @@ void XORexample()
 
 void XORexample2()
 {
-	in::NetworkStructure netStruct(3, {10, 10, 10}, 1);
+	in::NetworkStructure netStruct(3, {30, 30}, 1);
 
 	in::NetworkStructure::randomWeights(netStruct);
 
-	std::cout << netStruct << '\n';
+	// std::cout << netStruct << '\n';
+
+	std::cout << "starting" << '\n';
 
 	in::NeuralNetwork network(netStruct);
 
@@ -100,22 +102,26 @@ void XORexample2()
 		network.setInputNode(1, 0);
 		network.setInputNode(2, 0);
 		network.update();
-		fs << i << " " << network.backpropagation({0}) << '\n';
+		// fs << i << " " << network.backpropagation({0}) << '\n';
+		network.backpropagation({0});
 
 		network.setInputNode(1, 0);
 		network.setInputNode(2, 1);
 		network.update();
-		fs << i << " " << network.backpropagation({1}) << '\n';
+		// fs << i << " " << network.backpropagation({1}) << '\n';
+		network.backpropagation({1});
 
 		network.setInputNode(1, 1);
 		network.setInputNode(2, 0);
 		network.update();
-		fs << i << " " << network.backpropagation({1}) << '\n';
+		// fs << i << " " << network.backpropagation({1}) << '\n';
+		network.backpropagation({1});
 
 		network.setInputNode(1, 1);
 		network.setInputNode(2, 1);
 		network.update();
-		fs << i << " " << network.backpropagation({0}) << '\n';
+		// fs << i << " " << network.backpropagation({0}) << '\n';
+		network.backpropagation({0});
 	}
 
 	network.setInputNode(1, 0);

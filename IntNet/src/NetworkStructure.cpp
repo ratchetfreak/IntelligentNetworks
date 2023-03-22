@@ -62,6 +62,7 @@ in::NetworkStructure::NetworkStructure(const NetworkStructure &networkStructure)
 	_totalHiddenNodes = networkStructure._totalHiddenNodes;
 	_totalOutputNodes = networkStructure._totalOutputNodes;
 	_totalNodes		  = networkStructure._totalNodes;
+	_type			  = networkStructure._type;
 
 	_connection = new Connection[totalConnections];
 
@@ -72,7 +73,7 @@ in::NetworkStructure::NetworkStructure(const NetworkStructure &networkStructure)
 }
 
 in::NetworkStructure::NetworkStructure(int totalConnections, int totalInputNodes, int totalHiddenNodes,
-								   int totalOutputNodes, std::vector<Connection> connection)
+									   int totalOutputNodes, std::vector<Connection> connection)
 {
 	this->_connection		= new Connection[totalConnections];
 	this->_totalConnections = totalConnections;
@@ -89,8 +90,12 @@ in::NetworkStructure::NetworkStructure(int totalConnections, int totalInputNodes
 
 in::NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> totalHiddenNodes, int totalOutputNodes)
 {
+	_type = Layered;
+
 	this->_totalInputNodes	= totalInputNodes;
 	this->_totalOutputNodes = totalOutputNodes;
+
+	this->_hiddenLayerNodes = totalHiddenNodes;
 
 	for (int totalHiddenNodes : totalHiddenNodes)
 	{

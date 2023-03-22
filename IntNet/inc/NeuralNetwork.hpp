@@ -116,17 +116,20 @@ namespace in
 			Node  *_node; // INPUT HIDDEN OUTPUT
 			Node **_nodeCalculationOrder;
 
-			float _learningRate = 0.6;
-
 			float *_outputError;
+
+			void layeredCons();
+			void dynamicCons();
 
 		public:
 			Node **inputNode;
-			const NetworkStructure	 &structure	   = _networkStructure;
+			Node  *ouputNode;
+			float  learningRate = 0.6;
+
+			const NetworkStructure	 &structure			   = _networkStructure;
 			const int				 &connectedNodes	   = _connectedNodes;
 			const Node *const		 &node				   = _node;
 			const Node *const *const &nodeCalculationOrder = _nodeCalculationOrder;
-			const float				 &learningRate		   = _learningRate;
 			const float *const		 &outputError		   = _outputError;
 
 			NeuralNetwork(NetworkStructure &networkStructure);
