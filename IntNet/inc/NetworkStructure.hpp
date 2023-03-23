@@ -18,6 +18,7 @@ namespace in
 
 			Connection();
 			Connection(int start, int end, float weight);
+			Connection(unsigned char *data);
 
 			friend std::ostream &operator<<(std::ostream &os, const Connection &connection)
 			{
@@ -27,6 +28,8 @@ namespace in
 
 				return os << output.str();
 			}
+
+			std::string serialize();
 	};
 
 	enum NetworkStructureType
@@ -38,31 +41,34 @@ namespace in
 	class NetworkStructure
 	{
 		private:
-			Connection			*_connection	   = nullptr;
 			int					 _totalConnections = 0;
 			int					 _totalInputNodes  = 0;
 			int					 _totalHiddenNodes = 0;
 			int					 _totalOutputNodes = 0;
 			int					 _totalNodes	   = 0;
 			NetworkStructureType _type			   = Dynamic;
+			Connection			*_connection	   = nullptr;
 			std::vector<int>	 _hiddenLayerNodes;
 
 		public:
-			const Connection *const	   &connection		 = _connection;
 			const int				   &totalConnections = _totalConnections;
 			const int				   &totalInputNodes	 = _totalInputNodes;
 			const int				   &totalHiddenNodes = _totalHiddenNodes;
 			const int				   &totalOutputNodes = _totalOutputNodes;
 			const int				   &totalNodes		 = _totalNodes;
+			const Connection *const	   &connection		 = _connection;
 			const NetworkStructureType &type			 = _type;
 			const std::vector<int>	   &hiddenLayerNodes = _hiddenLayerNodes;
 
 			NetworkStructure(const NetworkStructure &networkStructure);
+			NetworkStructure(unsigned char *data);
 
 			NetworkStructure(int totalConnections, int totalInputNodes, int totalHiddenNodes, int totalOutputNodes,
 							 std::vector<Connection> connection);
 
 			NetworkStructure(int totalInputNodes, std::vector<int> totalHiddenNodes, int totalOutputNodes);
+
+			std::string serialize();
 
 			void addConnection(Connection connection);
 			void removeConnection(int index);

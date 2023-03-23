@@ -44,6 +44,23 @@ void travelBranchForLoop(in::Connection *connection, int id, bool *isNodeVisited
 	return;
 }
 
+void intToBytes(int *num, unsigned char charBuff[4])
+{
+	charBuff[0] = *num >> (8 * 3);
+	charBuff[1] = *num >> (8 * 2);
+	charBuff[2] = *num >> (8 * 1);
+	charBuff[3] = *num >> (8 * 0);
+}
+
+void bytesToInt(int *num, unsigned char charBuff[4])
+{
+	*num = 0;
+	(*num) |= (int)charBuff[0] << (8 * 3);
+	(*num) |= (int)charBuff[1] << (8 * 2);
+	(*num) |= (int)charBuff[2] << (8 * 1);
+	(*num) |= (int)charBuff[3] << (8 * 0);
+}
+
 in::Connection::Connection()
 {
 }
@@ -53,6 +70,32 @@ in::Connection::Connection(int start, int end, float weight)
 	startNode	 = start;
 	endNode		 = end;
 	this->weight = weight;
+}
+
+in::Connection::Connection(unsigned char *data)
+{
+	bytesToInt(&startNode, data + (4 * 0));
+	bytesToInt(&endNode, data + (4 * 1));
+	bytesToInt((int *)&weight, data + (4 * 2));
+	bytesToInt((int *)&valid, data + (4 * 3));
+	bytesToInt(&id, data + (4 * 4));
+	bytesToInt((int *)&exists, data + (4 * 5));
+}
+
+std::string in::Connection::serialize()
+{
+	unsigned char buf[6 * 4];
+
+	intToBytes(&startNode, buf + (4 * 0));
+	intToBytes(&endNode, buf + (4 * 1));
+	intToBytes((int *)&weight, buf + (4 * 2));
+	intToBytes((int *)&valid, buf + (4 * 3));
+	intToBytes(&id, buf + (4 * 4));
+	intToBytes((int *)&exists, buf + (4 * 5));
+
+	std::string buffer((char *)buf, 6 * 4);
+
+	return buffer;
 }
 
 in::NetworkStructure::NetworkStructure(const NetworkStructure &networkStructure)
@@ -69,6 +112,23 @@ in::NetworkStructure::NetworkStructure(const NetworkStructure &networkStructure)
 	for (int i = 0; i < totalConnections; i++)
 	{
 		_connection[i] = networkStructure.connection[i];
+	}
+}
+
+in::NetworkStructure::NetworkStructure(unsigned char *data)
+{
+	bytesToInt(&_totalConnections, data + (4 * 0));
+	bytesToInt(&_totalInputNodes, data + (4 * 1));
+	bytesToInt(&_totalHiddenNodes, data + (4 * 2));
+	bytesToInt(&_totalOutputNodes, data + (4 * 3));
+	bytesToInt(&_totalNodes, data + (4 * 4));
+	bytesToInt((int *)&_type, data + (4 * 5));
+
+	_connection = new Connection[_totalConnections];
+
+	for (int i = 0; i < _totalConnections; i++)
+	{
+		_connection[i] = in::Connection(data + (4 * 6) + (4 * 6 * i));
 	}
 }
 
@@ -167,6 +227,27 @@ in::NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> tot
 	}
 
 	_totalNodes = this->totalInputNodes + this->totalHiddenNodes + this->totalOutputNodes;
+}
+
+std::string in::NetworkStructure::serialize()
+{
+	unsigned char buf[(6 * 4)];
+
+	intToBytes(&_totalConnections, buf + (4 * 0));
+	intToBytes(&_totalInputNodes, buf + (4 * 1));
+	intToBytes(&_totalHiddenNodes, buf + (4 * 2));
+	intToBytes(&_totalOutputNodes, buf + (4 * 3));
+	intToBytes(&_totalNodes, buf + (4 * 4));
+	intToBytes((int *)&_type, buf + (4 * 5));
+
+	std::string buffer((char *)buf, (6 * 4));
+
+	for (int i = 0; i < _totalConnections; i++)
+	{
+		buffer += _connection[i].serialize();
+	}
+
+	return buffer;
 }
 
 void in::NetworkStructure::addConnection(Connection connection)
