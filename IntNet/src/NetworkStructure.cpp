@@ -44,23 +44,6 @@ void travelBranchForLoop(in::Connection *connection, int id, bool *isNodeVisited
 	return;
 }
 
-void intToBytes(int *num, unsigned char charBuff[4])
-{
-	charBuff[0] = *num >> (8 * 3);
-	charBuff[1] = *num >> (8 * 2);
-	charBuff[2] = *num >> (8 * 1);
-	charBuff[3] = *num >> (8 * 0);
-}
-
-void bytesToInt(int *num, unsigned char charBuff[4])
-{
-	*num = 0;
-	(*num) |= (int)charBuff[0] << (8 * 3);
-	(*num) |= (int)charBuff[1] << (8 * 2);
-	(*num) |= (int)charBuff[2] << (8 * 1);
-	(*num) |= (int)charBuff[3] << (8 * 0);
-}
-
 in::Connection::Connection()
 {
 }

@@ -180,7 +180,7 @@ in::NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : _networkS
 	_node	  = new Node[this->_networkStructure.totalNodes];
 	inputNode = new Node *[this->_networkStructure.totalInputNodes];
 
-	ouputNode = &_node[structure.totalNodes - structure.totalOutputNodes];
+	outputNode = &_node[structure.totalNodes - structure.totalOutputNodes];
 
 	// link input node pointers to actual nodes
 	for (int i = 0; i < this->_networkStructure.totalInputNodes; i++)
@@ -235,12 +235,123 @@ void in::NeuralNetwork::update()
 	return;
 }
 
+in::NeuralNetwork::NeuralNetwork(unsigned char *netdata, unsigned char *strudata) : _networkStructure(strudata)
+{
+	bytesToInt(&_connectedNodes, netdata + (4 * 0));
+	bytesToInt((int *)&learningRate, netdata + 4 * 1);
+
+	int offset = 2;
+
+	_outputError = new float[structure.totalOutputNodes];
+
+	for (int i = 0; i < structure.totalOutputNodes; i++)
+	{
+		bytesToInt((int *)&_outputError[i], netdata + (4 * offset));
+		offset++;
+	}
+
+	_nodeCalculationOrder = new Node *[_connectedNodes];
+	_node				  = new Node[structure.totalNodes];
+
+	std::cout << "\t\t" << structure.totalNodes << '\n';
+
+	for (int i = 0; i < connectedNodes; i++)
+	{
+		int index = 0;
+		bytesToInt((int *)&index, netdata + (4 * offset));
+
+		_nodeCalculationOrder[i] = &_node[index];
+
+		offset++;
+	}
+
+	for (int i = 0; i < structure.totalNodes; i++)
+	{
+		bytesToInt((int *)&(_node[i].id), netdata + (4 * offset));
+		offset++;
+		bytesToInt((int *)&(_node[i].value), netdata + (4 * offset));
+		offset++;
+		bytesToInt((int *)&(_node[i].parents), netdata + (4 * offset));
+		offset++;
+
+		_node[i].parent = new Node *[_node[i].parents];
+		_node[i].weight = new float *[_node[i].parents];
+
+		for (int x = 0; x < node[i].parents; x++)
+		{
+			int nodeIndex = 0;
+			bytesToInt((int *)&(nodeIndex), netdata + (4 * offset));
+			node[i].parent[x] = (Node *)(nodeIndex + (long)node);
+
+			offset++;
+			int weightIndex = 0;
+			bytesToInt((int *)&(weightIndex), netdata + (4 * offset));
+
+			node[i].weight[x] = (float *)((long)structure.connection + weightIndex);
+
+			offset++;
+		}
+	}
+
+	inputNode  = new Node *[structure.totalInputNodes];
+	outputNode = &_node[structure.totalNodes - structure.totalOutputNodes];
+}
+
+std::string in::NeuralNetwork::serialize()
+{
+	unsigned char buf[4 * 2];
+
+	intToBytes(&_connectedNodes, buf + (4 * 0));
+	intToBytes((int *)&learningRate, buf + 4 * 1);
+
+	int offset = 2;
+
+	std::string buffer((char *)buf, 4 * 2);
+
+	for (int i = 0; i < structure.totalOutputNodes; i++)
+	{
+		unsigned char cb[4];
+		intToBytes((int *)&_outputError[i], cb);
+		buffer.append((char *)cb, 4);
+	}
+
+	for (int i = 0; i < connectedNodes; i++)
+	{
+		unsigned char cb[4];
+
+		intToBytes((int *)&_nodeCalculationOrder[i]->id, cb);
+		buffer.append((char *)cb, 4);
+	}
+
+	for (int i = 0; i < structure.totalNodes; i++)
+	{
+		unsigned char cb[(4 * 3) + (4 * 2 * node[i].parents)];
+
+		intToBytes((int *)&(node[i].id), cb);
+		intToBytes((int *)&(node[i].value), cb + (4 * 1));
+		intToBytes((int *)&(node[i].parents), cb + (4 * 2));
+
+		for (int x = 0; x < node[i].parents; x++)
+		{
+			intToBytes((int *)&(node[i].parent[x]->id), cb + (4 * 3) + (4 * (x * 2) + 0));
+
+			int weightOffset = (long)structure.connection - (long)node[i].weight;
+
+			intToBytes((int *)&(weightOffset), cb + (4 * 3) + (4 * (x * 2) + 1));
+		}
+
+		buffer.append((char *)cb, (4 * 3) + (4 * 2 * node[i].parents));
+	}
+
+	return buffer;
+}
+
 float lazyNewWeight(float weight, float learningRate, float error)
 {
 	return weight - (learningRate * error * weight);
 }
 
-float in::NeuralNetwork::backpropagation(std::vector<float> targetValues) // FIXME slow and does redundant calculations
+float in::NeuralNetwork::backpropagation(std::vector<float> targetValues)
 {
 	float totalError = 0;
 

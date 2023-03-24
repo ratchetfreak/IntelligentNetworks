@@ -89,6 +89,27 @@ namespace in
 				}
 			}
 
+			std::string serialize()
+			{
+				unsigned char buf[4 * 3];
+
+				intToBytes(&id, buf + (4 * 0));
+				intToBytes((int *)&value, buf + (4 * 0));
+				intToBytes(&parents, buf + (4 * 0));
+
+				std::string buffer((char *)buf, 4 * 3);
+
+				for (int i = 0; i < parents; i++)
+				{
+					unsigned char index[4];
+					intToBytes(&parent[i]->id, index);
+
+					buffer.append((char *)index, 4);
+				}
+
+				return buffer;
+			}
+
 			friend std::ostream &operator<<(std::ostream &os, const Node &node)
 			{
 				std::stringstream output;
@@ -123,7 +144,7 @@ namespace in
 
 		public:
 			Node **inputNode;
-			Node  *ouputNode;
+			Node  *outputNode;
 			float  learningRate = 0.6;
 
 			const NetworkStructure	 &structure			   = _networkStructure;
@@ -132,12 +153,15 @@ namespace in
 			const Node *const *const &nodeCalculationOrder = _nodeCalculationOrder;
 			const float *const		 &outputError		   = _outputError;
 
+			NeuralNetwork(unsigned char* netdata, unsigned char* strudata);
 			NeuralNetwork(NetworkStructure &networkStructure);
 			// ~NeuralNetwork();
 
 			void setInputNode(int nodeNumber, float value);
 
 			void update();
+
+			std::string serialize();
 
 			float backpropagation(std::vector<float> targetValues);
 

@@ -170,15 +170,40 @@ int main()
 {
 	// std::srand(time(NULL));
 
-	in::NetworkStructure ns(1, {2, 3}, 4);
-	in::NetworkStructure::randomWeights(ns);
-
-	std::cout << ns << '\n';
-
-	in::NetworkStructure ns2((unsigned char *)ns.serialize().c_str());
-
-	std::cout << ns2 << '\n';
+	// in::NetworkStructure ns(1, {2, 3}, 4);
+	// in::NetworkStructure::randomWeights(ns);
+	//
+	// std::cout << ns << '\n';
+	//
+	// in::NetworkStructure ns2((unsigned char *)ns.serialize().c_str());
+	//
+	// std::cout << ns2 << '\n';
 
 	// XORexample();
 	// XORexample2();
+	
+	in::NetworkStructure ns(1, {2}, 3);
+	in::NeuralNetwork nn(ns);
+
+	std::cout << nn.structure << '\n';
+
+	std::string nsb = ns.serialize();
+	std::string nnb = nn.serialize();
+
+	in::NeuralNetwork nn1((unsigned char*)nnb.c_str(), (unsigned char*)nsb.c_str());
+
+	std::cout << nn1.structure << '\n';
+
+	std::cout << '\n';
+
+	std::cout << nn1.learningRate << '\n';
+	std::cout << nn1.connectedNodes<< '\n';
+
+	// for(int  i = 0; i < nn1.structure.totalNodes; i++)
+	// {
+	// 	std::cout << nn1.node[i] << '\n';
+	// }
+
+	nn.destroy();
+	nn1.destroy();
 }
