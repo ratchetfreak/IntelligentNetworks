@@ -35,7 +35,6 @@ namespace in
 
 			Connection();
 			Connection(int start, int end, float weight);
-			Connection(unsigned char *data);
 
 			friend std::ostream &operator<<(std::ostream &os, const Connection &connection)
 			{
@@ -45,8 +44,6 @@ namespace in
 
 				return os << output.str();
 			}
-
-			std::string serialize();
 	};
 
 	enum NetworkStructureType

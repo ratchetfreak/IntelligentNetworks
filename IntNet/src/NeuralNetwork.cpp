@@ -1,6 +1,7 @@
 #include "../inc/NeuralNetwork.hpp"
 
 #include <algorithm>
+#include <bitset>
 #include <iostream>
 #include <vector>
 
@@ -244,16 +245,8 @@ in::NeuralNetwork::NeuralNetwork(unsigned char *netdata, unsigned char *strudata
 
 	_outputError = new float[structure.totalOutputNodes];
 
-	for (int i = 0; i < structure.totalOutputNodes; i++)
-	{
-		bytesToInt((int *)&_outputError[i], netdata + (4 * offset));
-		offset++;
-	}
-
 	_nodeCalculationOrder = new Node *[_connectedNodes];
 	_node				  = new Node[structure.totalNodes];
-
-	std::cout << "\t\t" << structure.totalNodes << '\n';
 
 	for (int i = 0; i < connectedNodes; i++)
 	{
@@ -267,11 +260,11 @@ in::NeuralNetwork::NeuralNetwork(unsigned char *netdata, unsigned char *strudata
 
 	for (int i = 0; i < structure.totalNodes; i++)
 	{
-		bytesToInt((int *)&(_node[i].id), netdata + (4 * offset));
+		bytesToInt(&(_node[i].id), netdata + (4 * offset));
 		offset++;
-		bytesToInt((int *)&(_node[i].value), netdata + (4 * offset));
+		bytesToInt((int*)&(_node[i].value), netdata + (4 * offset));
 		offset++;
-		bytesToInt((int *)&(_node[i].parents), netdata + (4 * offset));
+		bytesToInt(&(_node[i].parents), netdata + (4 * offset));
 		offset++;
 
 		_node[i].parent = new Node *[_node[i].parents];
@@ -281,20 +274,73 @@ in::NeuralNetwork::NeuralNetwork(unsigned char *netdata, unsigned char *strudata
 		{
 			int nodeIndex = 0;
 			bytesToInt((int *)&(nodeIndex), netdata + (4 * offset));
-			node[i].parent[x] = (Node *)(nodeIndex + (long)node);
+			_node[i].parent[x] = &_node[nodeIndex];
 
 			offset++;
 			int weightIndex = 0;
 			bytesToInt((int *)&(weightIndex), netdata + (4 * offset));
-
-			node[i].weight[x] = (float *)((long)structure.connection + weightIndex);
+	
+			_node[i].weight[x] = (float *)((long)structure.connection + weightIndex);
 
 			offset++;
+		}
+
+		int size;
+		bytesToInt(&size, netdata + (4 * offset));
+
+		_node[i].BPV.resize(size);
+
+		offset++;
+
+		for (int x = 0; x < size; x++)
+		{
+			int outputIndex = 0;
+			bytesToInt(&outputIndex, netdata + (4 * offset));
+
+			_node[i].BPV[x].outputError = (float *)(outputIndex + (long)outputError);
+
+			offset++;
+
+			int vSize = 0;
+			bytesToInt(&vSize, netdata + (4 * offset));
+
+			_node[i].BPV[x].value.resize(vSize);
+
+			offset++;
+
+			int wSize = 0;
+			bytesToInt(&wSize, netdata + (4 * offset));
+
+			_node[i].BPV[x].weight.resize(wSize);
+
+			offset++;
+
+			for (int y = 0; y < vSize; y++)
+			{
+				int valueOffset = 0;
+				bytesToInt(&valueOffset, netdata + (4 * offset));
+
+				_node[i].BPV[x].value[y] = (float *)(valueOffset + (long)node);
+
+				offset++;
+			}
+
+			for (int y = 0; y < wSize; y++)
+			{
+				int weightOffset;
+				bytesToInt(&weightOffset, netdata + (4 * offset));
+
+				_node[i].BPV[x].weight[y] = (float *)(weightOffset + (long)structure.connection);
+
+				offset++;
+			}
 		}
 	}
 
 	inputNode  = new Node *[structure.totalInputNodes];
 	outputNode = &_node[structure.totalNodes - structure.totalOutputNodes];
+
+	// no mem issues how?
 }
 
 std::string in::NeuralNetwork::serialize()
@@ -304,16 +350,7 @@ std::string in::NeuralNetwork::serialize()
 	intToBytes(&_connectedNodes, buf + (4 * 0));
 	intToBytes((int *)&learningRate, buf + 4 * 1);
 
-	int offset = 2;
-
 	std::string buffer((char *)buf, 4 * 2);
-
-	for (int i = 0; i < structure.totalOutputNodes; i++)
-	{
-		unsigned char cb[4];
-		intToBytes((int *)&_outputError[i], cb);
-		buffer.append((char *)cb, 4);
-	}
 
 	for (int i = 0; i < connectedNodes; i++)
 	{
@@ -333,14 +370,69 @@ std::string in::NeuralNetwork::serialize()
 
 		for (int x = 0; x < node[i].parents; x++)
 		{
-			intToBytes((int *)&(node[i].parent[x]->id), cb + (4 * 3) + (4 * (x * 2) + 0));
+			intToBytes((int *)&(node[i].parent[x]->id), cb + (4 * 3) + (4 * ((x * 2) + 0)));
 
-			int weightOffset = (long)structure.connection - (long)node[i].weight;
+			int weightOffset = (long)node[i].weight[x] - (long)structure.connection;
 
-			intToBytes((int *)&(weightOffset), cb + (4 * 3) + (4 * (x * 2) + 1));
+			intToBytes((int *)&(weightOffset), cb + (4 * 3) + (4 * ((x * 2) + 1)));
 		}
 
 		buffer.append((char *)cb, (4 * 3) + (4 * 2 * node[i].parents));
+
+		unsigned char bpvsize[4 * 1];
+
+		int size = node[i].BPV.size();
+		intToBytes(&size, bpvsize);
+
+		buffer.append((char *)bpvsize, 4 * 1);
+
+		for (int x = 0; x < size; x++)
+		{
+			unsigned char cb1[4 * 3];
+			int			  offset = 0;
+
+			int outputIndex = (long)node[i].BPV[x].outputError - (long)outputError;
+			intToBytes(&outputIndex, cb1 + (4 * offset));
+			offset++;
+
+			int vSize = node[i].BPV[x].value.size();
+			intToBytes(&vSize, cb1 + (4 * offset));
+
+			offset++;
+
+			int wSize = node[i].BPV[x].weight.size();
+			intToBytes(&vSize, cb1 + (4 * offset));
+
+			offset++;
+
+			offset = 0;
+
+			unsigned char cb2[4 * vSize];
+
+			for (int y = 0; y < vSize; y++)
+			{
+				int valueOffset = (long)node[i].BPV[x].value[y] - (long)node;
+
+				intToBytes(&valueOffset, cb2 + (4 * offset));
+				offset++;
+			}
+
+			offset = 0;
+
+			unsigned char cb3[4 * wSize];
+
+			for (int y = 0; y < wSize; y++)
+			{
+				int weightOffset = (long)node[i].BPV[x].weight[y] - (long)structure.connection;
+
+				intToBytes(&weightOffset, cb3 + (4 * offset));
+				offset++;
+			}
+
+			buffer.append((char *)cb1, 4 * 3);
+			buffer.append((char *)cb2, 4 * vSize);
+			buffer.append((char *)cb3, 4 * wSize);
+		}
 	}
 
 	return buffer;

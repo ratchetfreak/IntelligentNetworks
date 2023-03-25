@@ -12,7 +12,7 @@ namespace in
 	class BackPropValues
 	{
 		public:
-			float				*outputError;
+			float				*outputError = nullptr;
 			std::vector<float *> value;
 			std::vector<float *> weight;
 			BackPropValues()

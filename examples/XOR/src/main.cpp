@@ -183,26 +183,28 @@ int main()
 	// XORexample2();
 	
 	in::NetworkStructure ns(1, {2}, 3);
+
+	in::NetworkStructure::randomWeights(ns);
+
 	in::NeuralNetwork nn(ns);
 
-	std::cout << nn.structure << '\n';
+	nn.inputNode[0]->value = .25;
 
 	std::string nsb = ns.serialize();
 	std::string nnb = nn.serialize();
 
 	in::NeuralNetwork nn1((unsigned char*)nnb.c_str(), (unsigned char*)nsb.c_str());
 
-	std::cout << nn1.structure << '\n';
+	nn.update();
+	nn1.update();
 
+	std::cout << nn.outputNode[0].value << '\n';
+	std::cout << nn.outputNode[1].value << '\n';
+	std::cout << nn.outputNode[2].value << '\n';
 	std::cout << '\n';
-
-	std::cout << nn1.learningRate << '\n';
-	std::cout << nn1.connectedNodes<< '\n';
-
-	// for(int  i = 0; i < nn1.structure.totalNodes; i++)
-	// {
-	// 	std::cout << nn1.node[i] << '\n';
-	// }
+	std::cout << nn1.outputNode[0].value << '\n';
+	std::cout << nn1.outputNode[1].value << '\n';
+	std::cout << nn1.outputNode[2].value << '\n';
 
 	nn.destroy();
 	nn1.destroy();
