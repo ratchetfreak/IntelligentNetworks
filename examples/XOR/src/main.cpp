@@ -5,6 +5,14 @@
 
 #include <bitset>
 
+#include <chrono>
+
+int getMillisecond()
+{
+	auto timepoint = std::chrono::system_clock::now().time_since_epoch();
+	return std::chrono::duration_cast<std::chrono::milliseconds>(timepoint).count();
+}
+
 inline float ranfloat(float f1, float f2)
 {
 	return (((float)std::rand() / (float)RAND_MAX) * (std::abs(f1) + std::abs(f2))) - std::abs(f1);
@@ -12,6 +20,7 @@ inline float ranfloat(float f1, float f2)
 
 void XORexample()
 {
+	int					 start = getMillisecond();
 	in::NetworkStructure netStruct(9, 5, 2, 1,
 								   {
 									   {0, 5, ranfloat(-1, 1)}, //
@@ -25,7 +34,7 @@ void XORexample()
 									   {6, 7, ranfloat(-1, 1)}, //
 								   });
 
-	std::cout << netStruct << '\n';
+	std::cout << '\t' << getMillisecond() - start << '\n';
 
 	in::NeuralNetwork network(netStruct);
 
@@ -34,6 +43,8 @@ void XORexample()
 	network.setInputNode(2, 1);
 
 	std::fstream fs("plot.txt", std::ios::out);
+
+	start = getMillisecond();
 
 	for (int i = 0; i < 10000; i++)
 	{
@@ -57,6 +68,8 @@ void XORexample()
 		network.update();
 		fs << i << " " << network.backpropagation({0}) << '\n';
 	}
+
+	std::cout << '\t' << getMillisecond() - start << '\n';
 
 	network.setInputNode(3, 0);
 	network.setInputNode(4, 0);
@@ -85,7 +98,7 @@ void XORexample()
 
 void XORexample2()
 {
-	in::NetworkStructure netStruct(3, {30, 30}, 1);
+	in::NetworkStructure netStruct(3, {30, 30, 30}, 1);
 
 	in::NetworkStructure::randomWeights(netStruct);
 
@@ -94,6 +107,8 @@ void XORexample2()
 	std::cout << "starting" << '\n';
 
 	in::NeuralNetwork network(netStruct);
+
+	std::cout << "training" << '\n';
 
 	network.setInputNode(0, 1);
 
@@ -166,6 +181,7 @@ void ibytesToInt(int *num, unsigned char charBuff[4])
 	(*num) |= (int)charBuff[2] << (8 * 1);
 	(*num) |= (int)charBuff[3] << (8 * 0);
 }
+
 int main()
 {
 	// std::srand(time(NULL));
@@ -179,9 +195,9 @@ int main()
 	//
 	// std::cout << ns2 << '\n';
 
-	// XORexample();
 	// XORexample2();
-	
+	// XORexample();
+
 	in::NetworkStructure ns(1, {2}, 3);
 
 	in::NetworkStructure::randomWeights(ns);
@@ -193,7 +209,8 @@ int main()
 	std::string nsb = ns.serialize();
 	std::string nnb = nn.serialize();
 
-	in::NeuralNetwork nn1((unsigned char*)nnb.c_str(), (unsigned char*)nsb.c_str());
+	in::NeuralNetwork nn1((unsigned char*)nnb.c_str(), (unsigned
+	char*)nsb.c_str());
 
 	nn.update();
 	nn1.update();

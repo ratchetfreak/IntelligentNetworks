@@ -5,53 +5,10 @@
 #include <cstdio>
 #include <iostream>
 #include <math.h>
+#include <pthread.h>
 
 namespace in
 {
-
-	class BackPropValues
-	{
-		public:
-			float				*outputError = nullptr;
-			std::vector<float *> value;
-			std::vector<float *> weight;
-			BackPropValues()
-			{
-			}
-
-			BackPropValues(float *outputError)
-			{
-				this->outputError = outputError;
-			}
-
-			BackPropValues next(float *weight, float *value)
-			{
-				BackPropValues bpv = *this;
-
-				bpv.weight.emplace_back(weight);
-				bpv.value.emplace_back(value);
-
-				return bpv;
-			}
-
-			friend std::ostream &operator<<(std::ostream &os, const BackPropValues &bpv)
-			{
-				std::stringstream output;
-
-				output << "outputError - " << *bpv.outputError << '\n';
-				for (float *nodeValue : bpv.value)
-				{
-					output << "nodeValue - " << *nodeValue << '\n';
-				}
-				for (float *weight : bpv.weight)
-				{
-					output << "weight - " << *weight << '\n';
-				}
-
-				return os << output.str();
-			}
-	};
-
 	inline float dsig(float sigx)
 	{
 		return sigx * (1. - sigx);
@@ -65,23 +22,10 @@ namespace in
 			int							parents = 0;
 			Node					  **parent	= nullptr;
 			float					  **weight	= nullptr;
-			std::vector<BackPropValues> BPV;
 
 			void calcNewWeight(float learningRate)
 			{
 				float multiplier = 0;
-
-				for (BackPropValues &bpv : BPV)
-				{
-					float mult = (*bpv.outputError) * learningRate;
-
-					for (int i = 0; i < bpv.value.size(); i++)
-					{
-						mult *= *bpv.weight[i] * dsig(*bpv.value[i]);
-					}
-
-					multiplier += mult;
-				}
 
 				for (int i = 0; i < parents; i++)
 				{
@@ -137,7 +81,7 @@ namespace in
 			Node  *_node; // INPUT HIDDEN OUTPUT
 			Node **_nodeCalculationOrder;
 
-			float *_outputError;
+			float *_nodeError;
 
 			void layeredCons();
 			void dynamicCons();
@@ -151,7 +95,7 @@ namespace in
 			const int				 &connectedNodes	   = _connectedNodes;
 			const Node *const		 &node				   = _node;
 			const Node *const *const &nodeCalculationOrder = _nodeCalculationOrder;
-			const float *const		 &outputError		   = _outputError;
+			const float *const		 &nodeError		   = _nodeError;
 
 			NeuralNetwork(unsigned char* netdata, unsigned char* strudata);
 			NeuralNetwork(NetworkStructure &networkStructure);

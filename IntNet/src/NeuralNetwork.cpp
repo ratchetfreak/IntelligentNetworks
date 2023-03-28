@@ -7,23 +7,8 @@
 
 #define e 2.71828
 
-void calcNodeBPV(in::Node *node, in::BackPropValues bpv)
+void calcNodeOrder(in::Node *node, bool *visitedNode, in::Node **nodeCalculationOrder, int *connectedNodes)
 {
-	node->BPV.emplace_back(bpv);
-
-	for (int i = 0; i < node->parents; i++)
-	{
-		calcNodeBPV(node->parent[i], bpv.next(node->weight[i], &node->value));
-	}
-
-	return;
-}
-
-void calcNodeOrderAndBPV(in::Node *node, bool *visitedNode, in::Node **nodeCalculationOrder, int *connectedNodes,
-						 in::BackPropValues bpv)
-{
-	node->BPV.emplace_back(bpv);
-
 	if (!node->parents)
 	{
 		visitedNode[node->id] = true;
@@ -34,12 +19,7 @@ void calcNodeOrderAndBPV(in::Node *node, bool *visitedNode, in::Node **nodeCalcu
 	{
 		if (!visitedNode[node->parent[i]->id])
 		{
-			calcNodeOrderAndBPV(node->parent[i], visitedNode, nodeCalculationOrder, connectedNodes,
-								bpv.next(node->weight[i], &node->value));
-		}
-		else
-		{
-			calcNodeBPV(node->parent[i], bpv.next(node->weight[i], &node->value));
+			calcNodeOrder(node->parent[i], visitedNode, nodeCalculationOrder, connectedNodes);
 		}
 	}
 
@@ -103,15 +83,12 @@ void in::NeuralNetwork::dynamicCons()
 
 	bool *visitedNode = new bool[_networkStructure.totalNodes]();
 
-	_outputError = new float[_networkStructure.totalOutputNodes];
+	_nodeError = new float[_networkStructure.totalNodes];
 
 	for (int i = (this->_networkStructure.totalNodes - this->_networkStructure.totalOutputNodes);
 		 i < this->_networkStructure.totalNodes; i++)
 	{
-		BackPropValues bpv(
-			&_outputError[i - (this->_networkStructure.totalNodes - this->_networkStructure.totalOutputNodes)]);
-
-		calcNodeOrderAndBPV(&_node[i], visitedNode, _nodeCalculationOrder, &_connectedNodes, bpv);
+		calcNodeOrder(&_node[i], visitedNode, _nodeCalculationOrder, &_connectedNodes);
 	}
 
 	delete[] visitedNode;
@@ -164,16 +141,7 @@ void in::NeuralNetwork::layeredCons()
 		_nodeCalculationOrder[i] = &_node[i + structure.totalInputNodes];
 	}
 
-	_outputError = new float[_networkStructure.totalOutputNodes];
-
-	for (int i = (this->_networkStructure.totalNodes - this->_networkStructure.totalOutputNodes);
-		 i < this->_networkStructure.totalNodes; i++)
-	{
-		BackPropValues bpv(
-			&_outputError[i - (this->_networkStructure.totalNodes - this->_networkStructure.totalOutputNodes)]);
-
-		calcNodeBPV(&_node[i], bpv);
-	}
+	_nodeError = new float[_networkStructure.totalNodes];
 }
 
 in::NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : _networkStructure(networkStructure)
@@ -243,7 +211,7 @@ in::NeuralNetwork::NeuralNetwork(unsigned char *netdata, unsigned char *strudata
 
 	int offset = 2;
 
-	_outputError = new float[structure.totalOutputNodes];
+	_nodeError = new float[structure.totalNodes];
 
 	_nodeCalculationOrder = new Node *[_connectedNodes];
 	_node				  = new Node[structure.totalNodes];
@@ -262,7 +230,7 @@ in::NeuralNetwork::NeuralNetwork(unsigned char *netdata, unsigned char *strudata
 	{
 		bytesToInt(&(_node[i].id), netdata + (4 * offset));
 		offset++;
-		bytesToInt((int*)&(_node[i].value), netdata + (4 * offset));
+		bytesToInt((int *)&(_node[i].value), netdata + (4 * offset));
 		offset++;
 		bytesToInt(&(_node[i].parents), netdata + (4 * offset));
 		offset++;
@@ -279,61 +247,10 @@ in::NeuralNetwork::NeuralNetwork(unsigned char *netdata, unsigned char *strudata
 			offset++;
 			int weightIndex = 0;
 			bytesToInt((int *)&(weightIndex), netdata + (4 * offset));
-	
+
 			_node[i].weight[x] = (float *)((long)structure.connection + weightIndex);
 
 			offset++;
-		}
-
-		int size;
-		bytesToInt(&size, netdata + (4 * offset));
-
-		_node[i].BPV.resize(size);
-
-		offset++;
-
-		for (int x = 0; x < size; x++)
-		{
-			int outputIndex = 0;
-			bytesToInt(&outputIndex, netdata + (4 * offset));
-
-			_node[i].BPV[x].outputError = (float *)(outputIndex + (long)outputError);
-
-			offset++;
-
-			int vSize = 0;
-			bytesToInt(&vSize, netdata + (4 * offset));
-
-			_node[i].BPV[x].value.resize(vSize);
-
-			offset++;
-
-			int wSize = 0;
-			bytesToInt(&wSize, netdata + (4 * offset));
-
-			_node[i].BPV[x].weight.resize(wSize);
-
-			offset++;
-
-			for (int y = 0; y < vSize; y++)
-			{
-				int valueOffset = 0;
-				bytesToInt(&valueOffset, netdata + (4 * offset));
-
-				_node[i].BPV[x].value[y] = (float *)(valueOffset + (long)node);
-
-				offset++;
-			}
-
-			for (int y = 0; y < wSize; y++)
-			{
-				int weightOffset;
-				bytesToInt(&weightOffset, netdata + (4 * offset));
-
-				_node[i].BPV[x].weight[y] = (float *)(weightOffset + (long)structure.connection);
-
-				offset++;
-			}
 		}
 	}
 
@@ -378,61 +295,6 @@ std::string in::NeuralNetwork::serialize()
 		}
 
 		buffer.append((char *)cb, (4 * 3) + (4 * 2 * node[i].parents));
-
-		unsigned char bpvsize[4 * 1];
-
-		int size = node[i].BPV.size();
-		intToBytes(&size, bpvsize);
-
-		buffer.append((char *)bpvsize, 4 * 1);
-
-		for (int x = 0; x < size; x++)
-		{
-			unsigned char cb1[4 * 3];
-			int			  offset = 0;
-
-			int outputIndex = (long)node[i].BPV[x].outputError - (long)outputError;
-			intToBytes(&outputIndex, cb1 + (4 * offset));
-			offset++;
-
-			int vSize = node[i].BPV[x].value.size();
-			intToBytes(&vSize, cb1 + (4 * offset));
-
-			offset++;
-
-			int wSize = node[i].BPV[x].weight.size();
-			intToBytes(&vSize, cb1 + (4 * offset));
-
-			offset++;
-
-			offset = 0;
-
-			unsigned char cb2[4 * vSize];
-
-			for (int y = 0; y < vSize; y++)
-			{
-				int valueOffset = (long)node[i].BPV[x].value[y] - (long)node;
-
-				intToBytes(&valueOffset, cb2 + (4 * offset));
-				offset++;
-			}
-
-			offset = 0;
-
-			unsigned char cb3[4 * wSize];
-
-			for (int y = 0; y < wSize; y++)
-			{
-				int weightOffset = (long)node[i].BPV[x].weight[y] - (long)structure.connection;
-
-				intToBytes(&weightOffset, cb3 + (4 * offset));
-				offset++;
-			}
-
-			buffer.append((char *)cb1, 4 * 3);
-			buffer.append((char *)cb2, 4 * vSize);
-			buffer.append((char *)cb3, 4 * wSize);
-		}
 	}
 
 	return buffer;
@@ -447,27 +309,40 @@ float in::NeuralNetwork::backpropagation(std::vector<float> targetValues)
 {
 	float totalError = 0;
 
+	for (int i = 0; i < _networkStructure.totalNodes - _networkStructure.totalOutputNodes; i++)
+	{
+		_nodeError[i] = 0;
+	}
+
 	for (int i = (_networkStructure.totalNodes - _networkStructure.totalOutputNodes); i < _networkStructure.totalNodes;
 		 i++)
 	{
 		float diff =
 			_node[i].value - targetValues[i - (_networkStructure.totalNodes - _networkStructure.totalOutputNodes)];
 
-		_outputError[i - (_networkStructure.totalNodes - _networkStructure.totalOutputNodes)] = diff;
+		_nodeError[i] = diff;
 
-		totalError +=
-			.5 * std::pow(_outputError[i - (_networkStructure.totalNodes - _networkStructure.totalOutputNodes)], 2);
+		totalError += .5 * std::pow(_nodeError[i], 2);
 	}
 
-	bool *visitedNode = new bool[_networkStructure.totalNodes]();
-
-	for (int i = 0; i < _connectedNodes; i++)
+	for (int i = _connectedNodes - 1; i >= 0; i--)
 	{
 		// std::cout << *nodeCalculationOrder[i] << '\n';
-		_nodeCalculationOrder[i]->calcNewWeight(learningRate);
-	}
+		// _nodeCalculationOrder[i]->calcNewWeight(learningRate);
 
-	delete[] visitedNode;
+		_nodeError[nodeCalculationOrder[i]->id] *= dsig(nodeCalculationOrder[i]->value);
+
+		for (int x = 0; x < nodeCalculationOrder[i]->parents; x++)
+		{
+			_nodeError[nodeCalculationOrder[i]->parent[x]->id] +=
+				_nodeError[nodeCalculationOrder[i]->id] * *nodeCalculationOrder[i]->weight[x];
+
+			// w_new = w_old - learningRate * error_total * input
+
+			*nodeCalculationOrder[i]->weight[x] -= learningRate * _nodeError[nodeCalculationOrder[i]->id] *
+												   nodeCalculationOrder[i]->parent[x]->value;
+		}
+	}
 
 	return totalError;
 }
@@ -487,7 +362,7 @@ void in::NeuralNetwork::destroy()
 	inputNode = nullptr;
 	delete[] _nodeCalculationOrder;
 	_nodeCalculationOrder = nullptr;
-	delete[] _outputError;
+	delete[] _nodeError;
 
 	return;
 }
