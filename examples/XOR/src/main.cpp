@@ -108,6 +108,8 @@ void XORexample2()
 
 	in::NeuralNetwork network(netStruct);
 
+	network.setActivation(in::ActivationFunction::tanh);
+
 	std::cout << "training" << '\n';
 
 	network.setInputNode(0, 1);
@@ -195,34 +197,34 @@ int main()
 	//
 	// std::cout << ns2 << '\n';
 
-	// XORexample2();
+	XORexample2();
 	// XORexample();
 
-	in::NetworkStructure ns(1, {2}, 3);
-
-	in::NetworkStructure::randomWeights(ns);
-
-	in::NeuralNetwork nn(ns);
-
-	nn.inputNode[0]->value = .25;
-
-	std::string nsb = ns.serialize();
-	std::string nnb = nn.serialize();
-
-	in::NeuralNetwork nn1((unsigned char*)nnb.c_str(), (unsigned
-	char*)nsb.c_str());
-
-	nn.update();
-	nn1.update();
-
-	std::cout << nn.outputNode[0].value << '\n';
-	std::cout << nn.outputNode[1].value << '\n';
-	std::cout << nn.outputNode[2].value << '\n';
-	std::cout << '\n';
-	std::cout << nn1.outputNode[0].value << '\n';
-	std::cout << nn1.outputNode[1].value << '\n';
-	std::cout << nn1.outputNode[2].value << '\n';
-
-	nn.destroy();
-	nn1.destroy();
+	// in::NetworkStructure ns(1, {2}, 3);
+	//
+	// in::NetworkStructure::randomWeights(ns);
+	//
+	// in::NeuralNetwork nn(ns);
+	//
+	// nn.inputNode[0]->value = .25;
+	//
+	// std::string nsb = ns.serialize();
+	// std::string nnb = nn.serialize();
+	//
+	// in::NeuralNetwork nn1((unsigned char*)nnb.c_str(), (unsigned
+	// char*)nsb.c_str());
+	//
+	// nn.update();
+	// nn1.update();
+	//
+	// std::cout << nn.outputNode[0].value << '\n';
+	// std::cout << nn.outputNode[1].value << '\n';
+	// std::cout << nn.outputNode[2].value << '\n';
+	// std::cout << '\n';
+	// std::cout << nn1.outputNode[0].value << '\n';
+	// std::cout << nn1.outputNode[1].value << '\n';
+	// std::cout << nn1.outputNode[2].value << '\n';
+	//
+	// nn.destroy();
+	// nn1.destroy();
 }

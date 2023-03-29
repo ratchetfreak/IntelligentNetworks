@@ -7,31 +7,25 @@
 #include <math.h>
 #include <pthread.h>
 
+#define e 2.71828
+
 namespace in
 {
-	inline float dsig(float sigx)
+	enum ActivationFunction
 	{
-		return sigx * (1. - sigx);
-	}
+		sigmoid,
+		tanh,
+		modsig
+	};
 
 	class Node
 	{
 		public:
-			int							id		= -1;
-			float						value	= 0;
-			int							parents = 0;
-			Node					  **parent	= nullptr;
-			float					  **weight	= nullptr;
-
-			void calcNewWeight(float learningRate)
-			{
-				float multiplier = 0;
-
-				for (int i = 0; i < parents; i++)
-				{
-					*weight[i] -= multiplier * parent[i]->value * dsig(value);
-				}
-			}
+			int		id		= -1;
+			float	value	= 0;
+			int		parents = 0;
+			Node  **parent	= nullptr;
+			float **weight	= nullptr;
 
 			std::string serialize()
 			{
@@ -83,6 +77,9 @@ namespace in
 
 			float *_nodeError;
 
+			float (*activation)(float) = sig;
+			float (*derivative)(float) = dsig;
+
 			void layeredCons();
 			void dynamicCons();
 
@@ -95,11 +92,13 @@ namespace in
 			const int				 &connectedNodes	   = _connectedNodes;
 			const Node *const		 &node				   = _node;
 			const Node *const *const &nodeCalculationOrder = _nodeCalculationOrder;
-			const float *const		 &nodeError		   = _nodeError;
+			const float *const		 &nodeError			   = _nodeError;
 
-			NeuralNetwork(unsigned char* netdata, unsigned char* strudata);
+			NeuralNetwork(unsigned char *netdata, unsigned char *strudata);
 			NeuralNetwork(NetworkStructure &networkStructure);
 			// ~NeuralNetwork();
+
+			void setActivation(ActivationFunction actfun);
 
 			void setInputNode(int nodeNumber, float value);
 
@@ -110,5 +109,30 @@ namespace in
 			float backpropagation(std::vector<float> targetValues);
 
 			void destroy();
+
+			static float sig(float x)
+			{
+				return 1. / (1. + std::pow(e, -x));
+			}
+
+			static float dsig(float sigx)
+			{
+				return sigx * (1. - sigx);
+			}
+
+			static float dtanh(float tanh)
+			{
+				return 1 - (tanh * tanh);
+			}
+
+			static float modsig(float x)
+			{
+				return 2 * ((1. / (1. + std::pow(e, -x))) - .5);
+			}
+
+			static float dmodsig(float modsigx)
+			{
+				return 2 * modsigx * (1. - modsigx);
+			}
 	};
 } // namespace in

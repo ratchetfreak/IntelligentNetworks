@@ -5,8 +5,6 @@
 #include <iostream>
 #include <vector>
 
-#define e 2.71828
-
 void calcNodeOrder(in::Node *node, bool *visitedNode, in::Node **nodeCalculationOrder, int *connectedNodes)
 {
 	if (!node->parents)
@@ -173,16 +171,30 @@ in::NeuralNetwork::NeuralNetwork(NetworkStructure &networkStructure) : _networkS
 	}
 }
 
+void in::NeuralNetwork::setActivation(in::ActivationFunction actfun)
+{
+	switch (actfun)
+	{
+		case in::ActivationFunction::sigmoid:
+			activation = sig;
+			derivative = dsig;
+			break;
+		case in::ActivationFunction::tanh:
+			activation = std::tanh;
+			derivative = dtanh;
+			break;
+		case in::ActivationFunction::modsig:
+			activation = modsig;
+			derivative = dmodsig;
+			break;
+	}
+}
+
 void in::NeuralNetwork::setInputNode(int nodeNumber, float value)
 {
 	inputNode[nodeNumber]->value = value;
 
 	return;
-}
-
-float sig(float x)
-{
-	return 1. / (1. + std::pow(e, -x));
 }
 
 // this is shit and can definately be improved
@@ -198,7 +210,7 @@ void in::NeuralNetwork::update()
 				_nodeCalculationOrder[i]->parent[x]->value * (*_nodeCalculationOrder[i]->weight[x]);
 		}
 		// nodeCalculationOrder[i]->value = tanh(nodeCalculationOrder[i]->value);
-		_nodeCalculationOrder[i]->value = sig(_nodeCalculationOrder[i]->value);
+		_nodeCalculationOrder[i]->value = activation(_nodeCalculationOrder[i]->value);
 	}
 
 	return;
@@ -330,7 +342,7 @@ float in::NeuralNetwork::backpropagation(std::vector<float> targetValues)
 		// std::cout << *nodeCalculationOrder[i] << '\n';
 		// _nodeCalculationOrder[i]->calcNewWeight(learningRate);
 
-		_nodeError[nodeCalculationOrder[i]->id] *= dsig(nodeCalculationOrder[i]->value);
+		_nodeError[nodeCalculationOrder[i]->id] *= derivative(nodeCalculationOrder[i]->value);
 
 		for (int x = 0; x < nodeCalculationOrder[i]->parents; x++)
 		{
@@ -339,8 +351,8 @@ float in::NeuralNetwork::backpropagation(std::vector<float> targetValues)
 
 			// w_new = w_old - learningRate * error_total * input
 
-			*nodeCalculationOrder[i]->weight[x] -= learningRate * _nodeError[nodeCalculationOrder[i]->id] *
-												   nodeCalculationOrder[i]->parent[x]->value;
+			*nodeCalculationOrder[i]->weight[x] -=
+				learningRate * _nodeError[nodeCalculationOrder[i]->id] * nodeCalculationOrder[i]->parent[x]->value;
 		}
 	}
 
