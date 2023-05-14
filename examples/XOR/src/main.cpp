@@ -1,5 +1,6 @@
 #include "../../../IntNet/intnet.hpp"
 
+#include <cmath>
 #include <fstream>
 #include <iostream>
 
@@ -98,11 +99,11 @@ void XORexample()
 
 void XORexample2()
 {
-	in::NetworkStructure netStruct(3, {30, 30, 30}, 1);
+	in::NetworkStructure netStruct(3, {5, 5}, 1);
 
 	in::NetworkStructure::randomWeights(netStruct);
 
-	// std::cout << netStruct << '\n';
+	std::cout << netStruct << '\n';
 
 	std::cout << "starting" << '\n';
 
@@ -142,6 +143,8 @@ void XORexample2()
 		// fs << i << " " << network.backpropagation({0}) << '\n';
 		network.backpropagation({0});
 	}
+
+	std::cout << network.structure << '\n';
 
 	network.setInputNode(1, 0);
 	network.setInputNode(2, 0);
@@ -186,7 +189,7 @@ void ibytesToInt(int *num, unsigned char charBuff[4])
 
 int main()
 {
-	// std::srand(time(NULL));
+	std::srand(time(NULL));
 
 	// in::NetworkStructure ns(1, {2, 3}, 4);
 	// in::NetworkStructure::randomWeights(ns);

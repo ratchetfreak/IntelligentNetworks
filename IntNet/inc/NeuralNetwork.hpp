@@ -110,6 +110,21 @@ namespace in
 
 			void destroy();
 
+			Node getNode(int i)
+			{
+				return node[i];
+			}
+
+			int getTotalNodes()
+			{
+				return structure.totalNodes;
+			}
+
+			Connection getConnection(int i)
+			{
+				return structure.connection[i];
+			}
+			
 			static float sig(float x)
 			{
 				return 1. / (1. + std::pow(e, -x));
