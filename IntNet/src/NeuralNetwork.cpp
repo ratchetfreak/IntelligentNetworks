@@ -86,7 +86,10 @@ void in::NeuralNetwork::dynamicCons()
 	for (int i = (this->_networkStructure.totalNodes - this->_networkStructure.totalOutputNodes);
 		 i < this->_networkStructure.totalNodes; i++)
 	{
-		calcNodeOrder(&_node[i], visitedNode, _nodeCalculationOrder, &_connectedNodes);
+		if (!visitedNode[_node[i].id])
+		{
+			calcNodeOrder(&_node[i], visitedNode, _nodeCalculationOrder, &_connectedNodes);
+		}
 	}
 
 	delete[] visitedNode;
