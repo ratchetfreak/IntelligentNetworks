@@ -263,7 +263,7 @@ in::NeuralNetwork::NeuralNetwork(unsigned char *netdata, unsigned char *strudata
 			int weightIndex = 0;
 			bytesToInt((int *)&(weightIndex), netdata + (4 * offset));
 
-			_node[i].weight[x] = (float *)((long)structure.connection + weightIndex);
+			_node[i].weight[x] = (float *)((int64_t)structure.connection + weightIndex);
 
 			offset++;
 		}
@@ -304,7 +304,7 @@ std::string in::NeuralNetwork::serialize()
 		{
 			intToBytes((int *)&(node[i].parent[x]->id), cb + (4 * 3) + (4 * ((x * 2) + 0)));
 
-			int weightOffset = (long)node[i].weight[x] - (long)structure.connection;
+			int64_t weightOffset = (int64_t)node[i].weight[x] - (int64_t)structure.connection;
 
 			intToBytes((int *)&(weightOffset), cb + (4 * 3) + (4 * ((x * 2) + 1)));
 		}
