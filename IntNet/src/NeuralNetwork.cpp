@@ -15,7 +15,6 @@ void calcNodeOrder(in::Node *node, bool *visitedNode, in::Node **nodeCalculation
 
 	for (int i = 0; i < node->parents; i++)
 	{
-		std::cout << *node << '\n';
 		if (!visitedNode[node->parent[i]->id])
 		{
 			calcNodeOrder(node->parent[i], visitedNode, nodeCalculationOrder, connectedNodes);
