@@ -52,13 +52,14 @@ namespace in
 			{
 				std::stringstream output;
 
-				output << "id      - " << node.id << '\n';
-				output << "value   - " << node.value << '\n';
-				output << "parents - " << node.parents << '\n';
+				std::cout << "id      - " << node.id << '\n';
+				std::cout << "value   - " << node.value << '\n';
+				std::cout << "parents - " << node.parents << '\n';
 				for (int i = 0; i < node.parents; i++)
 				{
-					output << "\tfrom    - " << node.parent[i]->id << '\n';
-					output << "\tweight  - " << *node.weight[i] << '\n';
+					std::cout << "printing " << i << '\n';
+					std::cout << "\tfrom    - " << node.parent[i]->id << '\n';
+					std::cout << "\tweight  - " << *node.weight[i] << '\n';
 				}
 
 				return os << output.str();

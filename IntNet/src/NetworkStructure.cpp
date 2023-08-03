@@ -451,25 +451,30 @@ void in::NetworkStructure::validate()
 		}
 	}
 
-	// invalid connections going into input
+	// invalidate connections depending on input and output
 
 	for (int i = 0; i < this->totalConnections; i++)
 	{
 		if (this->connection[i].valid)
 		{
-			if (this->connection[i].endNode < totalInputNodes)
+			if (this->connection[i].endNode < totalInputNodes) // going into input
 			{
 				this->_connection[i].valid = false;
 			}
-		}
-	}
 
-	// invalid connections going into themself
-	for (int i = 0; i < this->totalConnections; i++)
-	{
-		if (this->connection[i].valid)
-		{
-			if (this->connection[i].startNode == this->connection[i].endNode)
+			if (this->connection[i].startNode == this->connection[i].endNode) // going into self
+			{
+				this->_connection[i].valid = false;
+			}
+
+			// going to or from negative or going to an id too high
+
+			if (this->connection[i].startNode < 0 || this->connection[i].endNode < 0)
+			{
+				this->_connection[i].valid = false;
+			}
+
+			if (this->connection[i].startNode > totalNodes || this->connection[i].endNode > totalNodes)
 			{
 				this->_connection[i].valid = false;
 			}

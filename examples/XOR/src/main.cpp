@@ -189,45 +189,26 @@ void ibytesToInt(int *num, unsigned char charBuff[4])
 
 int main()
 {
-	std::srand(time(NULL));
+	in::NetworkStructure ns(15, 15, 4, 5,
+						 {
+							 in::Connection{0, 17, 1},
+							 in::Connection{0, 15, 2},
+							 in::Connection{0, 18, 3},
+							 in::Connection{15, 22, 4},
+							 in::Connection{16, 23, 5},
+							 in::Connection{7, 19, 6},
+							 in::Connection{17, 19, 7},
+							 in::Connection{18, 16, 8},
+							 in::Connection{12, 15, 9},
+							 in::Connection{-1, -1, 10},
+							 in::Connection{-1, -1, 11},
+							 in::Connection{-1, 15, 12},
+							 in::Connection{-1, -1, 13},
+							 in::Connection{-1, -1, 14},
+							 in::Connection{-1, -1, 15},
+						 });
 
-	// in::NetworkStructure ns(1, {2, 3}, 4);
-	// in::NetworkStructure::randomWeights(ns);
-	//
-	// std::cout << ns << '\n';
-	//
-	// in::NetworkStructure ns2((unsigned char *)ns.serialize().c_str());
-	//
-	// std::cout << ns2 << '\n';
+	in::NeuralNetwork nn(ns);
 
-	XORexample2();
-	// XORexample();
-
-	// in::NetworkStructure ns(1, {2}, 3);
-	//
-	// in::NetworkStructure::randomWeights(ns);
-	//
-	// in::NeuralNetwork nn(ns);
-	//
-	// nn.inputNode[0]->value = .25;
-	//
-	// std::string nsb = ns.serialize();
-	// std::string nnb = nn.serialize();
-	//
-	// in::NeuralNetwork nn1((unsigned char*)nnb.c_str(), (unsigned
-	// char*)nsb.c_str());
-	//
-	// nn.update();
-	// nn1.update();
-	//
-	// std::cout << nn.outputNode[0].value << '\n';
-	// std::cout << nn.outputNode[1].value << '\n';
-	// std::cout << nn.outputNode[2].value << '\n';
-	// std::cout << '\n';
-	// std::cout << nn1.outputNode[0].value << '\n';
-	// std::cout << nn1.outputNode[1].value << '\n';
-	// std::cout << nn1.outputNode[2].value << '\n';
-	//
-	// nn.destroy();
-	// nn1.destroy();
+	nn.destroy();
 }
