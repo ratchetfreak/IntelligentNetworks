@@ -57,7 +57,6 @@ namespace in
 				std::cout << "parents - " << node.parents << '\n';
 				for (int i = 0; i < node.parents; i++)
 				{
-					std::cout << "printing " << i << '\n';
 					std::cout << "\tfrom    - " << node.parent[i]->id << '\n';
 					std::cout << "\tweight  - " << *node.weight[i] << '\n';
 				}

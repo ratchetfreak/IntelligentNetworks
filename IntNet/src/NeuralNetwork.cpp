@@ -5,8 +5,13 @@
 #include <iostream>
 #include <vector>
 
+// NOTE - setting as visited at start of func is a lazy fix for a bigger looping
+// problem will rewrite loop detection code
+
 void calcNodeOrder(in::Node *node, bool *visitedNode, in::Node **nodeCalculationOrder, int *connectedNodes)
 {
+	visitedNode[node->id] = true;
+
 	if (!node->parents)
 	{
 		visitedNode[node->id] = true;
@@ -23,7 +28,6 @@ void calcNodeOrder(in::Node *node, bool *visitedNode, in::Node **nodeCalculation
 
 	nodeCalculationOrder[*connectedNodes] = node;
 	(*connectedNodes)++;
-	visitedNode[node->id] = true;
 
 	return;
 }
