@@ -143,7 +143,8 @@ in::NetworkStructure::NetworkStructure(int totalConnections, int totalInputNodes
 	}
 }
 
-in::NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> totalHiddenNodes, int totalOutputNodes)
+in::NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> totalHiddenNodes, int totalOutputNodes,
+									   bool hasBias)
 {
 	_type = Layered;
 
@@ -164,9 +165,18 @@ in::NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> tot
 		for (int i = 0; i < (totalHiddenNodes.size() - 1); i++)
 		{
 			_totalConnections += totalHiddenNodes[i] * totalHiddenNodes[i + 1];
+			if (hasBias)
+			{
+				_totalConnections += totalHiddenNodes[i + 1];
+			}
 		}
 
-		_totalConnections += totalHiddenNodes[totalHiddenNodes.size() - 1] * totalOutputNodes;
+		_totalConnections += (totalHiddenNodes[totalHiddenNodes.size() - 1] * totalOutputNodes);
+
+		if (hasBias)
+		{
+			_totalConnections += totalOutputNodes;
+		}
 
 		this->_connection = new Connection[totalConnections];
 
@@ -186,9 +196,14 @@ in::NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> tot
 
 		for (int z = 0; z < (totalHiddenNodes.size() - 1); z++)
 		{
-			for (int x = 0; x < totalHiddenNodes[z]; x++)
+			for (int y = 0; y < totalHiddenNodes[z + 1]; y++)
 			{
-				for (int y = 0; y < totalHiddenNodes[z + 1]; y++)
+				if (hasBias)
+				{
+					this->_connection[i] = {0, node + totalHiddenNodes[z] + y, 1};
+					i++;
+				}
+				for (int x = 0; x < totalHiddenNodes[z]; x++)
 				{
 					this->_connection[i] = {node + x, node + totalHiddenNodes[z] + y, 1};
 					i++;
@@ -197,9 +212,14 @@ in::NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> tot
 			node += totalHiddenNodes[z];
 		}
 
-		for (int x = 0; x < totalHiddenNodes[totalHiddenNodes.size() - 1]; x++)
+		for (int y = 0; y < totalOutputNodes; y++)
 		{
-			for (int y = 0; y < totalOutputNodes; y++)
+			if (hasBias)
+			{
+				this->_connection[i] = {0, node + totalHiddenNodes[totalHiddenNodes.size() - 1] + y, 1};
+				i++;
+			}
+			for (int x = 0; x < totalHiddenNodes[totalHiddenNodes.size() - 1]; x++)
 			{
 				this->_connection[i] = {node + x, node + totalHiddenNodes[totalHiddenNodes.size() - 1] + y, 1};
 				i++;

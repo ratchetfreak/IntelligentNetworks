@@ -80,7 +80,7 @@ namespace in
 			NetworkStructure(int totalConnections, int totalInputNodes, int totalHiddenNodes, int totalOutputNodes,
 							 std::vector<Connection> connection);
 
-			NetworkStructure(int totalInputNodes, std::vector<int> totalHiddenNodes, int totalOutputNodes);
+			NetworkStructure(int totalInputNodes, std::vector<int> totalHiddenNodes, int totalOutputNodes, bool hasBias);
 
 			std::string serialize();
 

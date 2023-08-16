@@ -99,7 +99,7 @@ void XORexample()
 
 void XORexample2()
 {
-	in::NetworkStructure netStruct(3, {5, 5}, 1);
+	in::NetworkStructure netStruct(3, {5, 5}, 1, false);
 
 	in::NetworkStructure::randomWeights(netStruct);
 
@@ -189,26 +189,7 @@ void ibytesToInt(int *num, unsigned char charBuff[4])
 
 int main()
 {
-	in::NetworkStructure ns(15, 15, 4, 5,
-						 {
-							 in::Connection{00, 19, 1},
-							 in::Connection{16, 22, 1},
-							 in::Connection{00, 23, 1},
-							 in::Connection{15, -1, 1},
-							 in::Connection{16, 17, 1},
-							 in::Connection{07, 18, 1},
-							 in::Connection{17, 16, 1},
-							 in::Connection{-1, -1, 1},
-							 in::Connection{-1, -1, 1},
-							 in::Connection{-1, -1, 1},
-							 in::Connection{-1, -1, 1},
-							 in::Connection{-1, 15, 1},
-							 in::Connection{-1, -1, 1},
-							 in::Connection{-1, -1, 1},
-							 in::Connection{-1, -1, 1},
-						 });
+	in::NetworkStructure ns(2, {3, 3}, 2, true);
 
-	in::NeuralNetwork nn(ns);
-
-	nn.destroy();
+	std::cout << ns << '\n';
 }
