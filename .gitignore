@@ -37,3 +37,6 @@ bin/plot.txt
 examples/XOR/.cache/clangd/index
 examples/XOR/bin/plot.txt
 compile_commands.json
+examples/SpaceFly/lib/AGL
+examples/SpaceFly/.cache/clangd/index
+examples/SpaceFly/bin/bin
