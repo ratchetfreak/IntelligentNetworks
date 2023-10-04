@@ -8,6 +8,21 @@
 #define STEPS	  360
 #define DISCOUNT  .9
 
+struct Tracjectory
+{
+		float state[5];
+		float action[2];
+		float logProb; // squared difference between action and taken action summed up
+		float reward;
+		float retRaw;
+};
+
+float noisyPick(float val, float variation)
+{
+	float range = ((rand() / (float)RAND_MAX) * 2) - 1;
+	return val + (variation * range);
+}
+
 int main()
 {
 	srand(time(nullptr));
@@ -22,39 +37,12 @@ int main()
 
 	network.setInputNode(0, 1);
 
-	float reward;
-
-	struct
-	{
-			agl::Vec<float, 2> pos;
-			float			   radius = 20;
-	} agent;
-
-	agent.pos.x = (rand() / (float)RAND_MAX) * 1920;
-	agent.pos.y = (rand() / (float)RAND_MAX) * 1080;
-
-	struct
-	{
-			agl::Vec<float, 2> pos;
-			float			   radius = 10;
-	} target;
-
-	target.pos.x = (rand() / (float)RAND_MAX) * 1920;
-	target.pos.y = (rand() / (float)RAND_MAX) * 1080;
-
-	struct
-	{
-			float state[5];
-			float action[2];
-			float logProb; // squared difference between action and taken action summed up
-			float reward;
-			float retRaw;
-	} trajectory[STEPS];
-
 	agl::RenderWindow window;
 	window.setup({1920, 1080}, "SpaceFly");
 	window.setClearColor(agl::Color::Black);
 	window.setFPS(0);
+
+	window.setSwapInterval(0);
 
 	agl::Event event;
 	event.setWindow(window);
@@ -92,97 +80,172 @@ int main()
 	circle.setSize({100, 100});
 	circle.setPosition({100, 100});
 
-	int steps = 0;
+	network.learningRate = .1;
 
 	while (!event.windowClose())
 	{
-		event.poll();
+		// std::cout << network.structure << '\n';
 
-		window.clear();
+		int steps = 0;
 
-		// draw agent
-		circle.setColor(agl::Color::Cyan);
-		circle.setSize({agent.radius, agent.radius});
-		circle.setPosition({agent.pos});
-		window.drawShape(circle);
-
-		target.pos = event.getPointerWindowPosition();
-
-		// draw target
-		circle.setColor(agl::Color::Magenta);
-		circle.setSize({target.radius, target.radius});
-		circle.setPosition({target.pos});
-		window.drawShape(circle);
-
-		window.display();
-
-		// network shit
-
-		network.setInputNode(1, agent.pos.x / 1920);
-		network.setInputNode(2, agent.pos.x / 1080);
-		network.setInputNode(3, target.pos.x / 1920);
-		network.setInputNode(4, target.pos.x / 1080);
-
-		network.update();
-
-		float xAction = network.outputNode[0].value * 2;
-		float yAction = network.outputNode[1].value * 2;
-
-		float range;
-
-		range	= ((rand() / (float)RAND_MAX) * 2) - 1;
-		xAction = xAction + (DEVIATION * range);
-		range	= ((rand() / (float)RAND_MAX) * 2) - 1;
-		yAction = yAction + (DEVIATION * range);
-
-		xAction = fmin(xAction, 1);
-		xAction = fmax(xAction, -1);
-		yAction = fmin(yAction, 1);
-		yAction = fmax(yAction, -1);
-
-		agent.pos += {xAction, yAction};
-
-		reward += 1 / (agent.pos - target.pos).length();
-		reward *= 1000;
-
-		trajectory[steps].state[0] = network.inputNode[0]->value;
-		trajectory[steps].state[1] = network.inputNode[1]->value;
-		trajectory[steps].state[2] = network.inputNode[2]->value;
-		trajectory[steps].state[3] = network.inputNode[3]->value;
-		trajectory[steps].state[4] = network.inputNode[4]->value;
-
-		trajectory[steps].action[0] = xAction;
-		trajectory[steps].action[1] = yAction;
-
-		for (int i = 0; i < 2; i++)
+		struct
 		{
-			trajectory[steps].logProb += pow(network.outputNode[i].value - trajectory[steps].action[i], 2);
+				agl::Vec<float, 2> pos;
+				float			   radius = 20;
+		} agent;
+
+		struct
+		{
+				agl::Vec<float, 2> pos;
+				float			   radius = 10;
+		} target;
+
+		int r = rand();
+
+		srand(0);
+
+		agent.pos.x = (rand() / (float)RAND_MAX) * 1920;
+		agent.pos.y = (rand() / (float)RAND_MAX) * 1080;
+
+		target.pos.x = (rand() / (float)RAND_MAX) * 1920;
+		target.pos.y = (rand() / (float)RAND_MAX) * 1080;
+
+		srand(r);
+
+		Tracjectory trajectory[STEPS];
+		float		reward;
+
+		while (!event.windowClose())
+		{
+			if (event.isKeyPressed(agl::Key::Space))
+			{
+				window.setSwapInterval(1);
+			}
+			else
+			{
+				window.setSwapInterval(0);
+			}
+
+			event.poll();
+
+			window.clear();
+
+			// draw agent
+			circle.setColor(agl::Color::Cyan);
+			circle.setSize({agent.radius, agent.radius});
+			circle.setPosition({agent.pos});
+			window.drawShape(circle);
+
+			// draw target
+			circle.setColor(agl::Color::Magenta);
+			circle.setSize({target.radius, target.radius});
+			circle.setPosition({target.pos});
+			window.drawShape(circle);
+
+			window.display();
+
+			// network shit
+
+			network.setInputNode(1, agent.pos.x / 1920);
+			network.setInputNode(2, agent.pos.x / 1080);
+			network.setInputNode(3, target.pos.x / 1920);
+			network.setInputNode(4, target.pos.x / 1080);
+
+			network.update();
+
+			float xAction = network.outputNode[0].value * 2;
+			float yAction = network.outputNode[1].value * 2;
+
+			float range;
+
+			range	= ((rand() / (float)RAND_MAX) * 2) - 1;
+			xAction = xAction + (DEVIATION * range);
+			range	= ((rand() / (float)RAND_MAX) * 2) - 1;
+			yAction = yAction + (DEVIATION * range);
+
+			xAction = fmin(xAction, 1);
+			xAction = fmax(xAction, -1);
+			yAction = fmin(yAction, 1);
+			yAction = fmax(yAction, -1);
+
+			float beforeDist = (agent.pos - target.pos).length();
+
+			agent.pos += {xAction, yAction};
+
+			float afterDist = (agent.pos - target.pos).length();
+
+			reward = beforeDist - afterDist;
+
+			trajectory[steps].state[0] = network.inputNode[0]->value;
+			trajectory[steps].state[1] = network.inputNode[1]->value;
+			trajectory[steps].state[2] = network.inputNode[2]->value;
+			trajectory[steps].state[3] = network.inputNode[3]->value;
+			trajectory[steps].state[4] = network.inputNode[4]->value;
+
+			trajectory[steps].action[0] = xAction;
+			trajectory[steps].action[1] = yAction;
+
+			for (int i = 0; i < 2; i++)
+			{
+				trajectory[steps].logProb += pow(network.outputNode[i].value - trajectory[steps].action[i], 2);
+			}
+
+			trajectory[steps].logProb *= - -.5;
+
+			trajectory[steps].reward = reward;
+
+			reward = 0;
+
+			steps++;
+			if (steps >= STEPS)
+			{
+				break;
+			}
 		}
 
-		trajectory[steps].logProb *=- -.5;
+		float loss = 0;
 
-		trajectory[steps].reward = reward;
-
-		reward = 0;
-
-		steps++;
-		if (steps >= STEPS)
+		for (int i = 0; i < STEPS; i++)
 		{
-			break;
-		}
-	}
+			trajectory[i].retRaw = trajectory[i].reward;
+			for (int x = i + 1; x < STEPS; x++)
+			{
+				trajectory[i].retRaw += trajectory[x].reward * std::pow(DISCOUNT, x - i);
+			}
 
-	float loss = 0;
-
-	for (int i = 0; i < STEPS; i++)
-	{
-		trajectory[i].retRaw = trajectory[i].reward;
-		for (int x = i + 1; x < STEPS; x++)
-		{
-			trajectory[i].retRaw += trajectory[i].reward * std::pow(DISCOUNT, x - i);
+			// loss += trajectory[i].retRaw * trajectory[i].logProb;
+			loss += trajectory[i].retRaw;
 		}
 
-		loss += trajectory[i].retRaw * trajectory[i].logProb;
+		loss /= STEPS;
+
+		std::vector<float> gradients;
+
+		network.setupGradients(&gradients);
+
+		for (int i = 0; i < STEPS; i++)
+		{
+			network.setInputNode(0, trajectory[i].state[0]);
+			network.setInputNode(1, trajectory[i].state[1]);
+			network.setInputNode(2, trajectory[i].state[2]);
+			network.setInputNode(3, trajectory[i].state[3]);
+			network.setInputNode(4, trajectory[i].state[4]);
+
+			network.update();
+
+			std::vector<float> target = {trajectory[i].action[0], trajectory[i].action[1]};
+
+			network.calcGradients(&gradients, target);
+		}
+
+		for (float &g : gradients)
+		{
+			g = noisyPick(g, .1);
+		}
+
+		network.applyGradients(gradients, loss, STEPS);
+
+		std::cout << loss << '\n';
 	}
 
 	window.close();

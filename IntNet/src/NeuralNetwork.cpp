@@ -324,6 +324,80 @@ float lazyNewWeight(float weight, float learningRate, float error)
 	return weight - (learningRate * error * weight);
 }
 
+void in::NeuralNetwork::setupGradients(std::vector<float> *gradients)
+{
+	int size = 0;
+	for (int i = _connectedNodes - 1; i >= 0; i--)
+	{
+		for (int x = 0; x < nodeCalculationOrder[i]->parents; x++)
+		{
+			size++;
+		}
+	}
+
+	(*gradients).resize(size, 0);
+}
+
+float in::NeuralNetwork::calcGradients(std::vector<float> *gradients, std::vector<float> targetValues)
+{
+	int index = 0;
+
+	float totalError = 0;
+
+	for (int i = 0; i < _networkStructure.totalNodes - _networkStructure.totalOutputNodes; i++)
+	{
+		_nodeError[i] = 0;
+	}
+
+	for (int i = (_networkStructure.totalNodes - _networkStructure.totalOutputNodes); i < _networkStructure.totalNodes;
+		 i++)
+	{
+		float diff =
+			_node[i].value - targetValues[i - (_networkStructure.totalNodes - _networkStructure.totalOutputNodes)];
+
+		_nodeError[i] = diff;
+
+		totalError += .5 * std::pow(_nodeError[i], 2);
+	}
+
+	for (int i = _connectedNodes - 1; i >= 0; i--)
+	{
+		// std::cout << *nodeCalculationOrder[i] << '\n';
+		// _nodeCalculationOrder[i]->calcNewWeight(learningRate);
+
+		_nodeError[nodeCalculationOrder[i]->id] *= derivative(nodeCalculationOrder[i]->value);
+
+		for (int x = 0; x < nodeCalculationOrder[i]->parents; x++)
+		{
+			_nodeError[nodeCalculationOrder[i]->parent[x]->id] +=
+				_nodeError[nodeCalculationOrder[i]->id] * *nodeCalculationOrder[i]->weight[x];
+
+			// w_new = w_old - learningRate * error_total * input
+
+			(*gradients)[index] += _nodeError[nodeCalculationOrder[i]->id] * nodeCalculationOrder[i]->parent[x]->value;
+
+			index++;
+		}
+	}
+
+	return totalError;
+}
+
+void in::NeuralNetwork::applyGradients(std::vector<float> &gradients, float loss, int episodeLength)
+{
+	int index = 0;
+
+	for (int i = _connectedNodes - 1; i >= 0; i--)
+	{
+		for (int x = 0; x < nodeCalculationOrder[i]->parents; x++)
+		{
+			*nodeCalculationOrder[i]->weight[x] -= learningRate * (gradients[index] / episodeLength) * loss;
+
+			index++;
+		}
+	}
+}
+
 float in::NeuralNetwork::backpropagation(std::vector<float> targetValues)
 {
 	float totalError = 0;

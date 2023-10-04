@@ -106,6 +106,10 @@ namespace in
 
 			std::string serialize();
 
+			void  setupGradients(std::vector<float> *gradients);
+			float calcGradients(std::vector<float> *gradients, std::vector<float> targetValues);
+			void  applyGradients(std::vector<float> &gradients, float loss = 0, int episodeLength = 0);
+
 			float backpropagation(std::vector<float> targetValues);
 
 			void destroy();
@@ -124,7 +128,7 @@ namespace in
 			{
 				return structure.connection[i];
 			}
-			
+
 			static float sig(float x)
 			{
 				return 1. / (1. + std::pow(e, -x));

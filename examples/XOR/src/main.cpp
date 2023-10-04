@@ -122,26 +122,42 @@ void XORexample2()
 		network.setInputNode(1, 0);
 		network.setInputNode(2, 0);
 		network.update();
-		// fs << i << " " << network.backpropagation({0}) << '\n';
 		network.backpropagation({0});
+		// {
+		// 	std::vector<float> gradients;
+		// 	network.calcGradients(&gradients, {0});
+		// 	network.applyGradients(gradients);
+		// }
 
 		network.setInputNode(1, 0);
 		network.setInputNode(2, 1);
 		network.update();
-		// fs << i << " " << network.backpropagation({1}) << '\n';
 		network.backpropagation({1});
+		// {
+		// 	std::vector<float> gradients;
+		// 	network.calcGradients(&gradients, {1});
+		// 	network.applyGradients(gradients);
+		// }
 
 		network.setInputNode(1, 1);
 		network.setInputNode(2, 0);
 		network.update();
-		// fs << i << " " << network.backpropagation({1}) << '\n';
 		network.backpropagation({1});
+		// {
+		// 	std::vector<float> gradients;
+		// 	network.calcGradients(&gradients, {1});
+		// 	network.applyGradients(gradients);
+		// }
 
 		network.setInputNode(1, 1);
 		network.setInputNode(2, 1);
 		network.update();
-		// fs << i << " " << network.backpropagation({0}) << '\n';
 		network.backpropagation({0});
+		// {
+		// 	std::vector<float> gradients;
+		// 	network.calcGradients(&gradients, {0});
+		// 	network.applyGradients(gradients);
+		// }
 	}
 
 	std::cout << network.structure << '\n';
@@ -189,7 +205,5 @@ void ibytesToInt(int *num, unsigned char charBuff[4])
 
 int main()
 {
-	in::NetworkStructure ns(2, {3, 3}, 2, true);
-
-	std::cout << ns << '\n';
+	XORexample2();
 }
