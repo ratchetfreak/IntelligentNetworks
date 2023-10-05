@@ -10,7 +10,7 @@
 
 struct Tracjectory
 {
-		float state[5];
+		float state[3];
 		float action[2];
 		float logProb; // squared difference between action and taken action summed up
 		float reward;
@@ -25,9 +25,9 @@ float noisyPick(float val, float variation)
 
 int main()
 {
-	srand(time(nullptr));
+	srand(0);
 
-	in::NetworkStructure netStruct(5, {5, 5}, 2, false);
+	in::NetworkStructure netStruct(3, {}, 2, false);
 
 	in::NetworkStructure::randomWeights(netStruct);
 
@@ -102,28 +102,26 @@ int main()
 
 		int r = rand();
 
-		srand(0);
-
 		agent.pos.x = (rand() / (float)RAND_MAX) * 1920;
 		agent.pos.y = (rand() / (float)RAND_MAX) * 1080;
 
 		target.pos.x = (rand() / (float)RAND_MAX) * 1920;
 		target.pos.y = (rand() / (float)RAND_MAX) * 1080;
 
-		srand(r);
-
 		Tracjectory trajectory[STEPS];
 		float		reward;
+
+		network.learningRate = .1;
 
 		while (!event.windowClose())
 		{
 			if (event.isKeyPressed(agl::Key::Space))
 			{
-				window.setSwapInterval(1);
+				window.setSwapInterval(0);
 			}
 			else
 			{
-				window.setSwapInterval(0);
+				window.setSwapInterval(1);
 			}
 
 			event.poll();
@@ -136,6 +134,8 @@ int main()
 			circle.setPosition({agent.pos});
 			window.drawShape(circle);
 
+			// target.pos = event.getPointerWindowPosition();
+
 			// draw target
 			circle.setColor(agl::Color::Magenta);
 			circle.setSize({target.radius, target.radius});
@@ -146,22 +146,19 @@ int main()
 
 			// network shit
 
-			network.setInputNode(1, agent.pos.x / 1920);
-			network.setInputNode(2, agent.pos.x / 1080);
-			network.setInputNode(3, target.pos.x / 1920);
-			network.setInputNode(4, target.pos.x / 1080);
+			network.setInputNode(0, 1);
+			network.setInputNode(1, (target.pos.x - agent.pos.x) / 1920);
+			network.setInputNode(2, (target.pos.y - agent.pos.y) / 1080);
 
 			network.update();
 
-			float xAction = network.outputNode[0].value * 2;
-			float yAction = network.outputNode[1].value * 2;
+			float xAction = network.outputNode[0].value;
+			float yAction = network.outputNode[1].value;
 
 			float range;
 
-			range	= ((rand() / (float)RAND_MAX) * 2) - 1;
-			xAction = xAction + (DEVIATION * range);
-			range	= ((rand() / (float)RAND_MAX) * 2) - 1;
-			yAction = yAction + (DEVIATION * range);
+			xAction = noisyPick(xAction, DEVIATION);
+			yAction = noisyPick(yAction, DEVIATION);
 
 			xAction = fmin(xAction, 1);
 			xAction = fmax(xAction, -1);
@@ -179,8 +176,6 @@ int main()
 			trajectory[steps].state[0] = network.inputNode[0]->value;
 			trajectory[steps].state[1] = network.inputNode[1]->value;
 			trajectory[steps].state[2] = network.inputNode[2]->value;
-			trajectory[steps].state[3] = network.inputNode[3]->value;
-			trajectory[steps].state[4] = network.inputNode[4]->value;
 
 			trajectory[steps].action[0] = xAction;
 			trajectory[steps].action[1] = yAction;
@@ -190,7 +185,9 @@ int main()
 				trajectory[steps].logProb += pow(network.outputNode[i].value - trajectory[steps].action[i], 2);
 			}
 
-			trajectory[steps].logProb *= - -.5;
+			trajectory[steps].logProb *= -.5;
+
+			// std::cout << trajectory[steps].logProb << '\n';
 
 			trajectory[steps].reward = reward;
 
@@ -219,6 +216,8 @@ int main()
 
 		loss /= STEPS;
 
+		std::cout << loss << '\n';
+
 		std::vector<float> gradients;
 
 		network.setupGradients(&gradients);
@@ -228,8 +227,6 @@ int main()
 			network.setInputNode(0, trajectory[i].state[0]);
 			network.setInputNode(1, trajectory[i].state[1]);
 			network.setInputNode(2, trajectory[i].state[2]);
-			network.setInputNode(3, trajectory[i].state[3]);
-			network.setInputNode(4, trajectory[i].state[4]);
 
 			network.update();
 
@@ -238,14 +235,15 @@ int main()
 			network.calcGradients(&gradients, target);
 		}
 
-		for (float &g : gradients)
-		{
-			g = noisyPick(g, .1);
-		}
+		// for (float &g : gradients)
+		// {
+		// 	g = noisyPick(g, .1);
+		// }
 
 		network.applyGradients(gradients, loss, STEPS);
 
-		std::cout << loss << '\n';
+		// std::cout << network.structure << '\n';
+		// std::cout << loss << '\n';
 	}
 
 	window.close();
