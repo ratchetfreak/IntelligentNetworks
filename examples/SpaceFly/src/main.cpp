@@ -8,10 +8,15 @@
 #define STEPS	  360
 #define DISCOUNT  .9
 
+int genRand(int min, int max)
+{
+	return min + (rand() % (int)(max - min + 1));
+}
+
 struct Tracjectory
 {
 		float state[3];
-		float action[2];
+		float action[4];
 		float logProb; // squared difference between action and taken action summed up
 		float reward;
 		float retRaw;
@@ -27,13 +32,13 @@ int main()
 {
 	srand(0);
 
-	in::NetworkStructure netStruct(3, {}, 2, false);
+	in::NetworkStructure netStruct(3, {4, 4}, 4, false);
 
 	in::NetworkStructure::randomWeights(netStruct);
 
 	in::NeuralNetwork network(netStruct);
 
-	network.setActivation(in::ActivationFunction::tanh);
+	network.setActivation(in::ActivationFunction::sigmoid);
 
 	network.setInputNode(0, 1);
 
@@ -113,6 +118,12 @@ int main()
 
 		network.learningRate = .1;
 
+		agl::Vec<float, 2> shift;
+		shift.x = noisyPick(0, DEVIATION);
+		shift.y = noisyPick(0, DEVIATION);
+
+		float baseline = 0;
+
 		while (!event.windowClose())
 		{
 			if (event.isKeyPressed(agl::Key::Space))
@@ -152,13 +163,18 @@ int main()
 
 			network.update();
 
-			float xAction = network.outputNode[0].value;
-			float yAction = network.outputNode[1].value;
+			// 0 & 1 = + x & y
+			// 2 & 4 = - x & y
+			float xAction = network.outputNode[0].value - network.outputNode[2].value;
+			float yAction = network.outputNode[1].value - network.outputNode[3].value;
 
 			float range;
 
-			xAction = noisyPick(xAction, DEVIATION);
-			yAction = noisyPick(yAction, DEVIATION);
+			if (!event.isKeyPressed(agl::Key::Q))
+			{
+				xAction += shift.x;
+				yAction += shift.y;
+			}
 
 			xAction = fmin(xAction, 1);
 			xAction = fmax(xAction, -1);
@@ -216,6 +232,11 @@ int main()
 
 		loss /= STEPS;
 
+		int oldLoss = loss;
+		loss -= baseline;
+
+		baseline = oldLoss;
+
 		std::cout << loss << '\n';
 
 		std::vector<float> gradients;
@@ -230,7 +251,7 @@ int main()
 
 			network.update();
 
-			std::vector<float> target = {trajectory[i].action[0], trajectory[i].action[1]};
+			std::vector<float> target = {trajectory[i].action[0], trajectory[i].action[1], trajectory[i].action[2], trajectory[i].action[3]};
 
 			network.calcGradients(&gradients, target);
 		}
