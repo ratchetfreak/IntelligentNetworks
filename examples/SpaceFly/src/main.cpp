@@ -7,6 +7,7 @@
 #define DEVIATION .5
 #define STEPS	  360
 #define DISCOUNT  .9
+#define EPSILON	  .25
 
 int genRand(int min, int max)
 {
@@ -17,7 +18,6 @@ struct Tracjectory
 {
 		float state[3];
 		float action[4];
-		float logProb; // squared difference between action and taken action summed up
 		float reward;
 		float retRaw;
 };
@@ -28,17 +28,210 @@ float noisyPick(float val, float variation)
 	return val + (variation * range);
 }
 
+void PGaction(in::NeuralNetwork &network, agl::Vec<float, 2> shift, agl::Vec<float, 2> &pos, Tracjectory &trajectory)
+{
+	network.update();
+
+	float xAction = network.outputNode[0].value;
+	float yAction = network.outputNode[1].value;
+
+	float range;
+
+	xAction += shift.x;
+	yAction += shift.y;
+
+	xAction = fmin(xAction, 1);
+	xAction = fmax(xAction, -1);
+	yAction = fmin(yAction, 1);
+	yAction = fmax(yAction, -1);
+
+	pos += {xAction, yAction};
+
+	trajectory.state[0] = network.inputNode[0]->value;
+	trajectory.state[1] = network.inputNode[1]->value;
+	trajectory.state[2] = network.inputNode[2]->value;
+
+	trajectory.action[0] = xAction;
+	trajectory.action[1] = yAction;
+
+	return;
+}
+
+void PGupdate(in::NeuralNetwork &network, Tracjectory *trajectory, float &baseline)
+{
+	float loss = 0;
+
+	for (int i = 0; i < STEPS; i++)
+	{
+		trajectory[i].retRaw = trajectory[i].reward;
+		for (int x = i + 1; x < STEPS; x++)
+		{
+			trajectory[i].retRaw += trajectory[x].reward * std::pow(DISCOUNT, x - i);
+		}
+
+		loss += trajectory[i].retRaw;
+	}
+
+	loss /= STEPS;
+
+	int oldLoss = loss;
+	loss -= baseline;
+
+	baseline = oldLoss;
+
+	std::cout << loss << '\n';
+
+	std::vector<float> gradients;
+
+	network.setupGradients(&gradients);
+
+	for (int i = 0; i < STEPS; i++)
+	{
+		network.setInputNode(0, trajectory[i].state[0]);
+		network.setInputNode(1, trajectory[i].state[1]);
+		network.setInputNode(2, trajectory[i].state[2]);
+
+		network.update();
+
+		std::vector<float> target = {trajectory[i].action[0], trajectory[i].action[1]};
+
+		network.calcGradients(&gradients, target);
+	}
+
+	network.applyGradients(gradients, loss, STEPS);
+}
+
+void DQNaction(in::NeuralNetwork &network, agl::Vec<float, 2> shift, agl::Vec<float, 2> &pos, Tracjectory &trajectory)
+{
+	network.updateLinearOutput();
+
+	trajectory.state[0] = network.inputNode[0]->value;
+	trajectory.state[1] = network.inputNode[1]->value;
+	trajectory.state[2] = network.inputNode[2]->value;
+
+	// 0 & 1 = + x & y
+	// 2 & 4 = - x & y
+
+	float xAction;
+	float yAction;
+
+	if (genRand(0, 1) > EPSILON)
+	{
+		if (network.outputNode[0].value > network.outputNode[2].value)
+		{
+			xAction				 = 1;
+			trajectory.action[0] = 1;
+		}
+		else
+		{
+			xAction				 = -1;
+			trajectory.action[2] = 1;
+		}
+	}
+	else
+	{
+		if (network.outputNode[0].value < network.outputNode[2].value)
+		{
+			xAction				 = 1;
+			trajectory.action[0] = 1;
+		}
+		else
+		{
+			xAction				 = -1;
+			trajectory.action[2] = 1;
+		}
+	}
+
+	if (genRand(0, 1) > EPSILON)
+	{
+		if (network.outputNode[1].value > network.outputNode[3].value)
+		{
+			yAction				 = 1;
+			trajectory.action[1] = 1;
+		}
+		else
+		{
+			yAction				 = -1;
+			trajectory.action[3] = 1;
+		}
+	}
+	else
+	{
+		if (network.outputNode[1].value < network.outputNode[3].value)
+		{
+			yAction				 = 1;
+			trajectory.action[1] = 1;
+		}
+		else
+		{
+			yAction				 = -1;
+			trajectory.action[3] = 1;
+		}
+	}
+
+	std::cout << network.outputNode[2].value << '\n';
+
+	pos += {xAction, yAction};
+
+	return;
+}
+
+void DQNupdate(in::NeuralNetwork &network, Tracjectory *trajectory, float &baseline)
+{
+	for (int i = 0; i < STEPS; i++)
+	{
+		trajectory[i].retRaw = trajectory[i].reward;
+		for (int x = i + 1; x < STEPS; x++)
+		{
+			trajectory[i].retRaw += trajectory[x].reward * std::pow(DISCOUNT, x - i);
+		}
+	}
+
+	std::vector<float> gradients;
+
+	network.setupGradients(&gradients);
+
+	for (int i = 0; i < STEPS; i++)
+	{
+		network.setInputNode(0, trajectory[i].state[0]);
+		network.setInputNode(1, trajectory[i].state[1]);
+		network.setInputNode(2, trajectory[i].state[2]);
+
+		network.updateLinearOutput();
+
+		std::vector<float> target;
+
+		target.resize(4);
+
+		for (int x = 0; x < 4; x++)
+		{
+			if (trajectory[i].action[x] == 1)
+			{
+				target[x] = trajectory[i].retRaw;
+			}
+			else
+			{
+				target[x] = network.outputNode[x].value;
+			}
+		}
+
+		network.calcGradients(&gradients, target);
+	}
+
+	network.applyGradients(gradients, .5, STEPS);
+}
+
 int main()
 {
 	srand(0);
 
-	in::NetworkStructure netStruct(3, {4, 4}, 4, false);
+	in::NetworkStructure netStruct(3, {8}, 4, false);
 
 	in::NetworkStructure::randomWeights(netStruct);
 
 	in::NeuralNetwork network(netStruct);
 
-	network.setActivation(in::ActivationFunction::sigmoid);
+	network.setActivation(in::ActivationFunction::tanh);
 
 	network.setInputNode(0, 1);
 
@@ -147,6 +340,11 @@ int main()
 
 			// target.pos = event.getPointerWindowPosition();
 
+			if (event.isKeyPressed(agl::Key::Q))
+			{
+				target.pos = event.getPointerWindowPosition();
+			}
+
 			// draw target
 			circle.setColor(agl::Color::Magenta);
 			circle.setSize({target.radius, target.radius});
@@ -161,51 +359,17 @@ int main()
 			network.setInputNode(1, (target.pos.x - agent.pos.x) / 1920);
 			network.setInputNode(2, (target.pos.y - agent.pos.y) / 1080);
 
-			network.update();
-
-			// 0 & 1 = + x & y
-			// 2 & 4 = - x & y
-			float xAction = network.outputNode[0].value - network.outputNode[2].value;
-			float yAction = network.outputNode[1].value - network.outputNode[3].value;
-
-			float range;
-
-			if (!event.isKeyPressed(agl::Key::Q))
-			{
-				xAction += shift.x;
-				yAction += shift.y;
-			}
-
-			xAction = fmin(xAction, 1);
-			xAction = fmax(xAction, -1);
-			yAction = fmin(yAction, 1);
-			yAction = fmax(yAction, -1);
-
 			float beforeDist = (agent.pos - target.pos).length();
 
-			agent.pos += {xAction, yAction};
+			// picking action & getting reward
+
+			DQNaction(network, shift, agent.pos, trajectory[steps]);
 
 			float afterDist = (agent.pos - target.pos).length();
 
 			reward = beforeDist - afterDist;
 
-			trajectory[steps].state[0] = network.inputNode[0]->value;
-			trajectory[steps].state[1] = network.inputNode[1]->value;
-			trajectory[steps].state[2] = network.inputNode[2]->value;
-
-			trajectory[steps].action[0] = xAction;
-			trajectory[steps].action[1] = yAction;
-
-			for (int i = 0; i < 2; i++)
-			{
-				trajectory[steps].logProb += pow(network.outputNode[i].value - trajectory[steps].action[i], 2);
-			}
-
-			trajectory[steps].logProb *= -.5;
-
-			// std::cout << trajectory[steps].logProb << '\n';
-
-			trajectory[steps].reward = reward;
+			trajectory[steps].reward = reward * 10;
 
 			reward = 0;
 
@@ -216,55 +380,8 @@ int main()
 			}
 		}
 
-		float loss = 0;
-
-		for (int i = 0; i < STEPS; i++)
-		{
-			trajectory[i].retRaw = trajectory[i].reward;
-			for (int x = i + 1; x < STEPS; x++)
-			{
-				trajectory[i].retRaw += trajectory[x].reward * std::pow(DISCOUNT, x - i);
-			}
-
-			// loss += trajectory[i].retRaw * trajectory[i].logProb;
-			loss += trajectory[i].retRaw;
-		}
-
-		loss /= STEPS;
-
-		int oldLoss = loss;
-		loss -= baseline;
-
-		baseline = oldLoss;
-
-		std::cout << loss << '\n';
-
-		std::vector<float> gradients;
-
-		network.setupGradients(&gradients);
-
-		for (int i = 0; i < STEPS; i++)
-		{
-			network.setInputNode(0, trajectory[i].state[0]);
-			network.setInputNode(1, trajectory[i].state[1]);
-			network.setInputNode(2, trajectory[i].state[2]);
-
-			network.update();
-
-			std::vector<float> target = {trajectory[i].action[0], trajectory[i].action[1], trajectory[i].action[2], trajectory[i].action[3]};
-
-			network.calcGradients(&gradients, target);
-		}
-
-		// for (float &g : gradients)
-		// {
-		// 	g = noisyPick(g, .1);
-		// }
-
-		network.applyGradients(gradients, loss, STEPS);
-
-		// std::cout << network.structure << '\n';
-		// std::cout << loss << '\n';
+		// updating network
+		DQNupdate(network, trajectory, baseline);
 	}
 
 	window.close();

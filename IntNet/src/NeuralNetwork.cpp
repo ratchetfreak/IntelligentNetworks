@@ -204,7 +204,6 @@ void in::NeuralNetwork::setInputNode(int nodeNumber, float value)
 	return;
 }
 
-// this is shit and can definately be improved
 void in::NeuralNetwork::update()
 {
 	for (int i = 0; i < _connectedNodes; i++)
@@ -218,6 +217,27 @@ void in::NeuralNetwork::update()
 		}
 		// nodeCalculationOrder[i]->value = tanh(nodeCalculationOrder[i]->value);
 		_nodeCalculationOrder[i]->value = activation(_nodeCalculationOrder[i]->value);
+	}
+
+	return;
+}
+
+void in::NeuralNetwork::updateLinearOutput()
+{
+	for (int i = 0; i < _connectedNodes; i++)
+	{
+		_nodeCalculationOrder[i]->value = 0;
+
+		for (int x = 0; x < _nodeCalculationOrder[i]->parents; x++)
+		{
+			_nodeCalculationOrder[i]->value +=
+				_nodeCalculationOrder[i]->parent[x]->value * (*_nodeCalculationOrder[i]->weight[x]);
+		}
+
+		if (_nodeCalculationOrder[i] < outputNode)
+		{
+			_nodeCalculationOrder[i]->value = activation(_nodeCalculationOrder[i]->value);
+		}
 	}
 
 	return;

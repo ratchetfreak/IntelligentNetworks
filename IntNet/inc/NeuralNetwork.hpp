@@ -103,6 +103,7 @@ namespace in
 			void setInputNode(int nodeNumber, float value);
 
 			void update();
+			void updateLinearOutput();
 
 			std::string serialize();
 
