@@ -318,7 +318,10 @@ std::string in::NeuralNetwork::serialize()
 
 	for (int i = 0; i < structure.totalNodes; i++)
 	{
-		unsigned char cb[(4 * 3) + (4 * 2 * node[i].parents)];
+    std::vector<unsigned char> storage;
+    storage.resize((4 * 3) + (4 * 2 * node[i].parents));
+    
+		unsigned char *cb = storage.data();
 
 		intToBytes((int *)&(node[i].id), cb);
 		intToBytes((int *)&(node[i].value), cb + (4 * 1));

@@ -340,6 +340,8 @@ void in::NetworkStructure::mutate()
 		int index = round((rand() / (float)RAND_MAX) * (totalConnections - 1));
 		int start = connection[index].startNode;
 		int end	  = connection[index].endNode;
+    (void) start;
+    (void) end;
 
 		_connection[index].weight = ((rand() / (float)RAND_MAX) * 2) - 1;
 	}

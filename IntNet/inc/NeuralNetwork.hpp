@@ -5,9 +5,9 @@
 #include <cstdio>
 #include <iostream>
 #include <math.h>
-#include <pthread.h>
+//#include <pthread.h>
 
-#define e 2.71828
+#define e 2.71828f
 
 namespace in
 {
@@ -86,7 +86,7 @@ namespace in
 		public:
 			Node **inputNode;
 			Node  *outputNode;
-			float  learningRate = 0.6;
+			float  learningRate = 0.6f;
 
 			const NetworkStructure	 &structure			   = _networkStructure;
 			const int				 &connectedNodes	   = _connectedNodes;
@@ -132,27 +132,27 @@ namespace in
 
 			static float sig(float x)
 			{
-				return 1. / (1. + std::pow(e, -x));
+				return 1.f / (1.f + std::pow(e, -x));
 			}
 
 			static float dsig(float sigx)
 			{
-				return sigx * (1. - sigx);
+				return sigx * (1.f - sigx);
 			}
 
 			static float dtanh(float tanh)
 			{
-				return 1 - (tanh * tanh);
+				return 1.f - (tanh * tanh);
 			}
 
 			static float modsig(float x)
 			{
-				return 2 * ((1. / (1. + std::pow(e, -x))) - .5);
+				return 2 * ((1.f / (1.f + std::pow(e, -x))) - .5f);
 			}
 
 			static float dmodsig(float modsigx)
 			{
-				return 2 * modsigx * (1. - modsigx);
+				return 2 * modsigx * (1.f - modsigx);
 			}
 	};
 } // namespace in
