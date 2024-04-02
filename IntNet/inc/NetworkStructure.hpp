@@ -61,7 +61,6 @@ namespace in
 			int					 _totalOutputNodes = 0;
 			int					 _totalNodes	   = 0;
 			NetworkStructureType _type			   = Dynamic;
-			Connection			*_connection	   = nullptr;
 			std::vector<int>	 _hiddenLayerNodes;
 
 		public:
@@ -70,7 +69,7 @@ namespace in
 			const int				   &totalHiddenNodes = _totalHiddenNodes;
 			const int				   &totalOutputNodes = _totalOutputNodes;
 			const int				   &totalNodes		 = _totalNodes;
-			const Connection *const	   &connection		 = _connection;
+			std::vector<Connection>	   connection;
 			const NetworkStructureType &type			 = _type;
 			const std::vector<int>	   &hiddenLayerNodes = _hiddenLayerNodes;
 

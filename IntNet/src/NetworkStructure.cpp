@@ -66,11 +66,11 @@ in::NetworkStructure::NetworkStructure(const NetworkStructure &networkStructure)
 
 	_hiddenLayerNodes = networkStructure._hiddenLayerNodes;
 
-	_connection = new Connection[totalConnections];
+	connection.resize(totalConnections);
 
 	for (int i = 0; i < totalConnections; i++)
 	{
-		_connection[i] = networkStructure.connection[i];
+		this->connection[i] = networkStructure.connection[i];
 	}
 }
 
@@ -91,21 +91,21 @@ in::NetworkStructure::NetworkStructure(unsigned char *data)
 	bytesToInt((int *)&_type, data + (4 * offset));
 	offset++;
 
-	_connection = new Connection[_totalConnections];
+	this->connection.resize(_totalConnections);
 
 	for (int i = 0; i < _totalConnections; i++)
 	{
-		bytesToInt(&_connection[i].startNode, data + (4 * offset));
+		bytesToInt(&this->connection[i].startNode, data + (4 * offset));
 		offset++;
-		bytesToInt(&_connection[i].endNode, data + (4 * offset));
+		bytesToInt(&this->connection[i].endNode, data + (4 * offset));
 		offset++;
-		bytesToInt((int *)&_connection[i].weight, data + (4 * offset));
+		bytesToInt((int *)&this->connection[i].weight, data + (4 * offset));
 		offset++;
-		bytesToInt((int *)&_connection[i].valid, data + (4 * offset));
+		bytesToInt((int *)&this->connection[i].valid, data + (4 * offset));
 		offset++;
-		bytesToInt(&_connection[i].id, data + (4 * offset));
+		bytesToInt(&this->connection[i].id, data + (4 * offset));
 		offset++;
-		bytesToInt((int *)&_connection[i].exists, data + (4 * offset));
+		bytesToInt((int *)&this->connection[i].exists, data + (4 * offset));
 		offset++;
 	}
 
@@ -130,7 +130,7 @@ in::NetworkStructure::NetworkStructure(unsigned char *data)
 in::NetworkStructure::NetworkStructure(int totalConnections, int totalInputNodes, int totalHiddenNodes,
 									   int totalOutputNodes, std::vector<Connection> connection)
 {
-	this->_connection		= new Connection[totalConnections];
+	this->connection.resize(totalConnections);
 	this->_totalConnections = totalConnections;
 	this->_totalInputNodes	= totalInputNodes;
 	this->_totalHiddenNodes = totalHiddenNodes;
@@ -139,7 +139,7 @@ in::NetworkStructure::NetworkStructure(int totalConnections, int totalInputNodes
 
 	for (int i = 0; i < connection.size(); i++)
 	{
-		this->_connection[i] = connection[i];
+		this->connection[i] = connection[i];
 	}
 }
 
@@ -178,7 +178,7 @@ in::NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> tot
 			_totalConnections += totalOutputNodes;
 		}
 
-		this->_connection = new Connection[totalConnections];
+		this->connection.resize(_totalConnections);
 
 		int i	 = 0;
 		int node = 0;
@@ -187,7 +187,7 @@ in::NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> tot
 		{
 			for (int y = 0; y < totalHiddenNodes[0]; y++)
 			{
-				this->_connection[i] = {x, totalInputNodes + y, 1};
+				this->connection[i] = {x, totalInputNodes + y, 1};
 				i++;
 			}
 		}
@@ -200,12 +200,12 @@ in::NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> tot
 			{
 				if (hasBias)
 				{
-					this->_connection[i] = {0, node + totalHiddenNodes[z] + y, 1};
+					this->connection[i] = {0, node + totalHiddenNodes[z] + y, 1};
 					i++;
 				}
 				for (int x = 0; x < totalHiddenNodes[z]; x++)
 				{
-					this->_connection[i] = {node + x, node + totalHiddenNodes[z] + y, 1};
+					this->connection[i] = {node + x, node + totalHiddenNodes[z] + y, 1};
 					i++;
 				}
 			}
@@ -216,12 +216,12 @@ in::NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> tot
 		{
 			if (hasBias)
 			{
-				this->_connection[i] = {0, node + totalHiddenNodes[totalHiddenNodes.size() - 1] + y, 1};
+				this->connection[i] = {0, node + totalHiddenNodes[totalHiddenNodes.size() - 1] + y, 1};
 				i++;
 			}
 			for (int x = 0; x < totalHiddenNodes[totalHiddenNodes.size() - 1]; x++)
 			{
-				this->_connection[i] = {node + x, node + totalHiddenNodes[totalHiddenNodes.size() - 1] + y, 1};
+				this->connection[i] = {node + x, node + totalHiddenNodes[totalHiddenNodes.size() - 1] + y, 1};
 				i++;
 			}
 		}
@@ -230,13 +230,13 @@ in::NetworkStructure::NetworkStructure(int totalInputNodes, std::vector<int> tot
 	{
 		_totalConnections = totalInputNodes * totalOutputNodes;
 
-		this->_connection = new Connection[totalConnections];
+		this->connection.resize(totalConnections);
 
 		for (int x = 0; x < totalInputNodes; x++)
 		{
 			for (int y = 0; y < totalOutputNodes; y++)
 			{
-				this->_connection[(x * totalOutputNodes) + y] = {x, totalInputNodes + y, 1};
+				this->connection[(x * totalOutputNodes) + y] = {x, totalInputNodes + y, 1};
 			}
 		}
 	}
@@ -261,12 +261,12 @@ std::string in::NetworkStructure::serialize()
 	{
 		unsigned char cb[4 * 6];
 
-		intToBytes(&_connection[i].startNode, cb + (4 * 0));
-		intToBytes(&_connection[i].endNode, cb + (4 * 1));
-		intToBytes((int *)&_connection[i].weight, cb + (4 * 2));
-		intToBytes((int *)&_connection[i].valid, cb + (4 * 3));
-		intToBytes(&_connection[i].id, cb + (4 * 4));
-		intToBytes((int *)&_connection[i].exists, cb + (4 * 5));
+		intToBytes(&connection[i].startNode, cb + (4 * 0));
+		intToBytes(&connection[i].endNode, cb + (4 * 1));
+		intToBytes((int *)&connection[i].weight, cb + (4 * 2));
+		intToBytes((int *)&connection[i].valid, cb + (4 * 3));
+		intToBytes(&connection[i].id, cb + (4 * 4));
+		intToBytes((int *)&connection[i].exists, cb + (4 * 5));
 
 		buffer.append((char *)cb, 4 * 6);
 	}
@@ -295,17 +295,17 @@ void in::NetworkStructure::addConnection(Connection connection)
 {
 	for (int i = 0; i < totalConnections; i++)
 	{
-		if (!_connection[i].valid)
+		if (!this->connection[i].valid)
 		{
-			_connection[i] = connection;
+			this->connection[i] = connection;
 		}
 	}
 }
 
 void in::NetworkStructure::removeConnection(int index)
 {
-	_connection[index].valid  = false;
-	_connection[index].exists = false;
+	connection[index].valid  = false;
+	connection[index].exists = false;
 }
 
 void in::NetworkStructure::mutate()
@@ -314,7 +314,7 @@ void in::NetworkStructure::mutate()
 
 	for (int i = 0; i < totalConnections; i++)
 	{
-		if (!connection[i].exists)
+		if (!this->connection[i].exists)
 		{
 			nonExistIndex = i;
 			break;
@@ -343,13 +343,13 @@ void in::NetworkStructure::mutate()
     (void) start;
     (void) end;
 
-		_connection[index].weight = ((rand() / (float)RAND_MAX) * 2) - 1;
+		this->connection[index].weight = ((rand() / (float)RAND_MAX) * 2) - 1;
 	}
 	else if (type == 1)
 	{
 		int index = round((rand() / (float)RAND_MAX) * (totalConnections - 1));
 
-		_connection[index].exists = false;
+		this->connection[index].exists = false;
 	}
 	else if (type == 2)
 	{
@@ -361,12 +361,12 @@ void in::NetworkStructure::mutate()
 
 			for (int i = 0; i < totalConnections; i++)
 			{
-				if (!_connection[i].exists)
+				if (!this->connection[i].exists)
 				{
 					continue;
 				}
 
-				if (_connection[i].startNode == node || connection[i].endNode == node)
+				if (this->connection[i].startNode == node || connection[i].endNode == node)
 				{
 					node = -1;
 				}
@@ -382,12 +382,12 @@ void in::NetworkStructure::mutate()
 		{
 			int index = round((rand() / (float)RAND_MAX) * (totalConnections - 1));
 
-			_connection[nonExistIndex].exists	 = true;
-			_connection[nonExistIndex].startNode = node;
-			_connection[nonExistIndex].endNode	 = connection[index].endNode;
-			_connection[nonExistIndex].weight	 = 1;
+			this->connection[nonExistIndex].exists	 = true;
+			this->connection[nonExistIndex].startNode = node;
+			this->connection[nonExistIndex].endNode	 = connection[index].endNode;
+			this->connection[nonExistIndex].weight	 = 1;
 
-			_connection[index].endNode = node;
+			this->connection[index].endNode = node;
 		}
 	}
 	else if (type == 3)
@@ -397,16 +397,16 @@ void in::NetworkStructure::mutate()
 
 		for (int i = 0; i < totalConnections; i++)
 		{
-			if (!_connection[i].exists)
+			if (!this->connection[i].exists)
 			{
 				continue;
 			}
 
-			if (_connection[i].startNode < (totalInputNodes + totalOutputNodes))
+			if (this->connection[i].startNode < (totalInputNodes + totalOutputNodes))
 			{
-				if (std::find(hiddenNodes.begin(), hiddenNodes.end(), _connection[i].startNode) != hiddenNodes.end())
+				if (std::find(hiddenNodes.begin(), hiddenNodes.end(), this->connection[i].startNode) != hiddenNodes.end())
 				{
-					hiddenNodes.emplace_back(_connection[i].startNode);
+					hiddenNodes.emplace_back(this->connection[i].startNode);
 				}
 			}
 		}
@@ -430,10 +430,10 @@ void in::NetworkStructure::mutate()
 			endNode += totalInputNodes;
 		}
 
-		_connection[nonExistIndex].exists	 = true;
-		_connection[nonExistIndex].startNode = startNode;
-		_connection[nonExistIndex].endNode	 = endNode;
-		_connection[nonExistIndex].weight	 = ((rand() / (float)RAND_MAX) * 2) - 1;
+		this->connection[nonExistIndex].exists	 = true;
+		this->connection[nonExistIndex].startNode = startNode;
+		this->connection[nonExistIndex].endNode	 = endNode;
+		this->connection[nonExistIndex].weight	 = ((rand() / (float)RAND_MAX) * 2) - 1;
 	}
 }
 
@@ -441,7 +441,7 @@ void in::NetworkStructure::randomWeights(NetworkStructure &networkStructure)
 {
 	for (int i = 0; i < networkStructure.totalConnections; i++)
 	{
-		networkStructure._connection[i].weight = ((std::rand() / (float)RAND_MAX) * 2) - 1;
+		networkStructure.connection[i].weight = ((std::rand() / (float)RAND_MAX) * 2) - 1;
 	}
 }
 
@@ -450,7 +450,7 @@ void in::NetworkStructure::validate()
 	// give every connection an id
 	for (int i = 0; i < totalConnections; i++)
 	{
-		_connection[i].id = i;
+		this->connection[i].id = i;
 	}
 
 	// Invalidate duplicated connections
@@ -466,7 +466,7 @@ void in::NetworkStructure::validate()
 					if (this->connection[x].startNode == this->connection[i].startNode &&
 						this->connection[x].endNode == this->connection[i].endNode)
 					{
-						this->_connection[x].valid = false;
+						this->connection[x].valid = false;
 					}
 				}
 			}
@@ -481,24 +481,24 @@ void in::NetworkStructure::validate()
 		{
 			if (this->connection[i].endNode < totalInputNodes) // going into input
 			{
-				this->_connection[i].valid = false;
+				this->connection[i].valid = false;
 			}
 
 			if (this->connection[i].startNode == this->connection[i].endNode) // going into self
 			{
-				this->_connection[i].valid = false;
+				this->connection[i].valid = false;
 			}
 
 			// going to or from negative or going to an id too high
 
 			if (this->connection[i].startNode < 0 || this->connection[i].endNode < 0)
 			{
-				this->_connection[i].valid = false;
+				this->connection[i].valid = false;
 			}
 
 			if (this->connection[i].startNode > totalNodes || this->connection[i].endNode > totalNodes)
 			{
-				this->_connection[i].valid = false;
+				this->connection[i].valid = false;
 			}
 		}
 	}
@@ -548,7 +548,7 @@ void in::NetworkStructure::validate()
 				isNodeVisited[i] = false;
 			}
 
-			travelBranchForLoop(this->_connection, i, isNodeVisited, this->_totalConnections, this->_totalNodes);
+			travelBranchForLoop(this->connection.data(), i, isNodeVisited, this->_totalConnections, this->_totalNodes);
 
 			delete[] isNodeVisited;
 		}
@@ -558,11 +558,10 @@ void in::NetworkStructure::validate()
 
 	for (int i = 0; i < totalConnections; i++)
 	{
-		_connection[i].exists = _connection[i].valid;
+		this->connection[i].exists = this->connection[i].valid;
 	}
 }
 
 in::NetworkStructure::~NetworkStructure()
 {
-	delete[] connection;
 }
